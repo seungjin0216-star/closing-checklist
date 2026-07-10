@@ -1,414 +1,605 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-  <base target="_top">
-  <meta charset="utf-8">
-  <style>
-    :root {
-      --bg: #f4f5f7;
-      --card: #ffffff;
-      --text: #1c1c1e;
-      --muted: #8a8a8e;
-      --accent: #2f6fed;
-      --extra: #e08a00;
-      --extra-bg: #fff6e8;
-      --extra-border: #f0c374;
-      --ok: #1fa855;
-      --danger: #e5484d;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      padding-bottom: 110px;
-    }
-    header {
-      background: var(--card);
-      padding: 18px 16px 14px;
-      border-bottom: 1px solid #e7e7ea;
-      position: sticky;
-      top: 0;
-      z-index: 5;
-    }
-    header h1 {
-      font-size: 17px;
-      margin: 0 0 2px;
-    }
-    header .date {
-      font-size: 22px;
-      font-weight: 700;
-    }
-    .name-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 10px;
-    }
-    .name-row input {
-      flex: 1;
-      padding: 10px 12px;
-      border: 1px solid #d8d8dc;
-      border-radius: 10px;
-      font-size: 15px;
-    }
-    main {
-      padding: 14px 14px 0;
-    }
-    .section {
-      background: var(--card);
-      border-radius: 14px;
-      padding: 14px 14px 6px;
-      margin-bottom: 14px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-    }
-    .section.extra {
-      background: var(--extra-bg);
-      border: 1px solid var(--extra-border);
-    }
-    .section h2 {
-      font-size: 15px;
-      margin: 0 0 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .section.extra h2 { color: #8a5a00; }
-    .item {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 10px 2px;
-      border-bottom: 1px solid #eee;
-    }
-    .section.extra .item { border-bottom-color: #f2dca3; }
-    .item:last-child { border-bottom: none; }
-    .item input[type="checkbox"] {
-      width: 22px;
-      height: 22px;
-      margin-top: 2px;
-      flex-shrink: 0;
-      accent-color: var(--accent);
-    }
-    .section.extra .item input[type="checkbox"] { accent-color: var(--extra); }
-    .item .label-wrap { flex: 1; }
-    .item .label { font-size: 15px; line-height: 1.4; }
-    .item.checked .label { color: var(--muted); text-decoration: line-through; }
-    .item .meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
-    .ing-toggle {
-      width: 100%;
-      background: none;
-      border: 1px dashed var(--extra-border);
-      color: #8a5a00;
-      border-radius: 10px;
-      padding: 10px;
-      font-size: 14px;
-      margin: 6px 0 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    #ingredientList { display: none; }
-    #ingredientList.open { display: block; }
-    .progress-wrap {
-      padding: 4px 2px 10px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-    .bar {
-      height: 8px;
-      border-radius: 6px;
-      background: #e7e7ea;
-      overflow: hidden;
-      margin-top: 6px;
-    }
-    .bar-fill {
-      height: 100%;
-      background: var(--accent);
-      width: 0%;
-      transition: width .2s ease;
-    }
-    footer {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: var(--card);
-      padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
-      border-top: 1px solid #e7e7ea;
-      z-index: 5;
-    }
-    .complete-btn {
-      width: 100%;
-      padding: 15px;
-      border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 700;
-      color: #fff;
-      background: #c9c9cd;
-    }
-    .complete-btn.ready { background: var(--ok); }
-    .done-banner {
-      background: #eafaf0;
-      border: 1px solid #b7ecc8;
-      color: #146c2e;
-      border-radius: 12px;
-      padding: 12px;
-      font-size: 14px;
-      margin: 0 14px 14px;
-      line-height: 1.5;
-    }
-    .done-banner button {
-      background: none;
-      border: none;
-      color: #146c2e;
-      text-decoration: underline;
-      font-size: 13px;
-      padding: 0;
-      margin-top: 6px;
-    }
-    .sheet-link {
-      display: block;
-      text-align: center;
-      font-size: 13px;
-      color: var(--muted);
-      padding: 8px 0 18px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>백석직영점 마감체크리스트</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="백석 마감">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow-x:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:#f5f5f7;min-height:100vh}
+.screen{display:none}.screen.active{display:block}
+.container{width:100%;max-width:500px;margin:0 auto;padding:24px 20px 140px}
+
+/* 헤더 */
+.brand{font-size:24px;font-weight:700;color:#1c1c1e;margin-bottom:6px}
+.brand-loc{display:inline-block;background:#ede9fe;color:#5b21b6;font-size:13px;font-weight:600;padding:4px 12px;border-radius:20px;margin-bottom:16px}
+.date-pill{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid #e0e0e0;border-radius:12px;padding:12px 16px;margin-bottom:22px}
+.dp-label{font-size:12px;color:#8e8e93}
+.dp-val{font-size:16px;font-weight:700;color:#1c1c1e}
+.dp-note{font-size:12px;color:#8e8e93;margin-left:auto}
+
+/* 섹션 */
+.sec-title{font-size:12px;font-weight:700;color:#8e8e93;letter-spacing:.04em;margin:26px 0 10px;padding-bottom:7px;border-bottom:1.5px solid #e0e0e0;display:flex;justify-content:space-between}
+.sec-title.extra{color:#b45309}
+.sec-title.monthly{color:#0369a1}
+.sec-note{font-size:11px;color:#a1a1aa;font-weight:500;margin:-4px 0 10px}
+
+/* 태스크 로우 (체크 대상 항목) */
+.task-row{display:flex;align-items:center;gap:14px;padding:16px 16px;border-radius:14px;background:#fff;border:1.5px solid #e0e0e0;margin-bottom:10px;cursor:pointer;transition:all .12s;user-select:none}
+.task-row:active{transform:scale(.98)}
+.task-check{width:26px;height:26px;border-radius:50%;border:2px solid #d1d1d6;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;transition:all .12s}
+.task-check.gchecked{background:#7c3aed;border-color:#7c3aed}
+.task-body{flex:1;min-width:0}
+.task-label{font-size:15px;font-weight:600;color:#1c1c1e;line-height:1.4}
+.task-meta{font-size:12px;color:#8e8e93;margin-top:3px;display:none}
+
+.task-row.checked{border-color:#7c3aed;background:#faf5ff}
+.task-row.checked .task-check{background:#7c3aed;border-color:#7c3aed}
+.task-row.checked .task-meta{display:block}
+
+.task-row.extra.checked{border-color:#d97706;background:#fffbeb}
+.task-row.extra.checked .task-check{background:#d97706;border-color:#d97706}
+
+.task-row.weekly{border-style:dashed;border-color:#a1a1aa}
+.task-row.weekly.checked{border-style:solid;border-color:#7c3aed;background:#faf5ff}
+
+.task-row.locked{opacity:.7;pointer-events:none}
+
+/* 월간 청소 */
+.task-row.monthly{border-color:#bae6fd;background:#f0f9ff}
+.task-row.monthly .task-check{border-color:#7dd3fc}
+.task-row.monthly.checked{border-color:#0284c7;background:#f0f9ff}
+.task-row.monthly.checked .task-check{background:#0284c7;border-color:#0284c7}
+.task-row.monthly.urgent{border-color:#dc2626;background:#fef2f2}
+.task-row.monthly.urgent .task-check{border-color:#f87171}
+.task-row.monthly .task-tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;margin-top:4px;background:#e0f2fe;color:#0369a1}
+.task-row.monthly.urgent .task-tag{background:#fee2e2;color:#b91c1c}
+.task-row.monthly.checked .task-tag{background:#dcfce7;color:#15803d}
+
+/* 그룹(아코디언) */
+.group-card{background:#fff;border:1.5px solid #e0e0e0;border-radius:14px;margin-bottom:10px;overflow:hidden;transition:all .12s}
+.group-card.done{border-color:#7c3aed;background:#faf5ff}
+.group-card.locked{opacity:.7;pointer-events:none}
+.group-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px}
+.group-check-wrap{display:flex;align-items:center;gap:12px;cursor:pointer;flex:1;min-width:0;padding:2px 0}
+.group-check-wrap:active{opacity:.7}
+.group-title{font-size:15px;font-weight:600;color:#1c1c1e}
+.group-right{display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 4px 8px 10px;margin:-8px -4px -8px 0}
+.group-count{font-size:12px;font-weight:700;color:#8e8e93}
+.group-count.done{color:#7c3aed}
+.group-arrow{font-size:13px;color:#a1a1aa;transition:transform .15s}
+.group-body{display:none;padding:0 16px 14px 54px}
+.group-body.open{display:block}
+.check-row{display:flex;gap:8px;flex-wrap:wrap}
+.check-chip{padding:8px 14px;border-radius:20px;font-size:13px;font-weight:600;border:1.5px solid #e0e0e0;background:#fff;color:#a1a1aa}
+.check-chip.on{background:#ede9fe;border-color:#7c3aed;color:#5b21b6}
+
+/* 진행률 */
+.progress-wrap{padding:14px 2px 6px;font-size:13px;color:#8e8e93;font-weight:600}
+.bar{height:8px;border-radius:6px;background:#e5e5ea;overflow:hidden;margin-top:8px}
+.bar-fill{height:100%;background:#7c3aed;width:0%;transition:width .25s ease}
+
+/* 하단 고정 버튼 */
+.bottom-bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e5e5ea;padding:12px 20px calc(14px + env(safe-area-inset-bottom));z-index:20}
+.bottom-bar .inner{max-width:500px;margin:0 auto}
+.submit-btn{width:100%;padding:17px;border-radius:16px;font-size:16px;font-weight:700;border:none;cursor:pointer;transition:all .15s;background:#d1d1d6;color:#8e8e93}
+.submit-btn.ready{background:#7c3aed;color:#fff}
+.submit-btn:active{opacity:.85}
+
+/* 완료 화면 */
+.done-wrap{padding:48px 0 24px;text-align:center}
+.done-icon{font-size:64px;margin-bottom:18px}
+.done-title{font-size:22px;font-weight:700;color:#1c1c1e;margin-bottom:8px}
+.done-sub{font-size:15px;color:#636366;line-height:1.6;margin-bottom:24px}
+.reset-btn{margin-top:16px;width:100%;padding:15px;border-radius:14px;background:#fff;border:1.5px solid #e0e0e0;font-size:15px;color:#636366;cursor:pointer}
+.undo-link{display:block;margin-top:18px;font-size:13px;color:#b45309;text-decoration:underline;cursor:pointer}
+
+/* 로딩 */
+.loading-ov{display:none;position:fixed;inset:0;background:rgba(255,255,255,.9);z-index:999;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.loading-ov.show{display:flex}
+.spinner{width:44px;height:44px;border:4px solid #e0e0e0;border-top-color:#7c3aed;border-radius:50%;animation:spin .8s linear infinite}
+.loading-text{font-size:15px;color:#636366}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
 </head>
 <body>
 
-<header>
-  <h1>백석직영점 마감 체크리스트</h1>
-  <div class="date" id="dateLabel">-</div>
-  <div class="name-row">
-    <input id="nameInput" type="text" placeholder="이름을 입력하세요 (예: 홍길동)">
+<!-- 메인 체크리스트 화면 -->
+<div class="screen active" id="s-main">
+  <div class="container">
+    <div class="brand">🍽 장수한우곱창</div>
+    <div class="brand-loc">🟢 백석직영점 · 마감체크리스트</div>
+
+    <div class="date-pill">
+      <span class="dp-label">오늘</span>
+      <span class="dp-val" id="date-val"></span>
+      <span class="dp-note" id="sync-note">동기화 중…</span>
+    </div>
+
+    <div class="sec-title">✅ 필수 마감 · 채우기</div>
+    <div id="fillList"></div>
+
+    <div class="sec-title">🧹 청소</div>
+    <div id="cleanList"></div>
+
+    <div class="sec-title" id="weeklyTitle" style="display:none">🗓️ 정기 청소 (이번주)</div>
+    <div id="weeklyList"></div>
+
+    <div class="sec-title extra">🔒 마지막 확인</div>
+    <div id="finalList"></div>
+
+    <div class="sec-title monthly">📅 월간 청소 (한 달에 한 번)</div>
+    <div class="sec-note">체크 안 해도 오늘 마감은 완료할 수 있어요. 이번 달에 한 번만 하면 됩니다.</div>
+    <div id="monthlyList"></div>
+
+    <div class="progress-wrap">
+      전체 진행률 <span id="progressText">0/0</span>
+      <div class="bar"><div class="bar-fill" id="progressBar"></div></div>
+    </div>
   </div>
-</header>
 
-<div id="doneBannerWrap"></div>
-
-<main>
-  <div class="section">
-    <h2>✅ 필수 마감</h2>
-    <div id="baseList"></div>
+  <div class="bottom-bar">
+    <div class="inner">
+      <button class="submit-btn" id="completeBtn">전부 체크하면 완료할 수 있어요</button>
+    </div>
   </div>
+</div>
 
-  <div class="section extra">
-    <h2>⚠️ 마감 후 추가로 확인</h2>
-    <div id="extraList"></div>
-    <button class="ing-toggle" id="ingToggle">
-      <span>재료준비 <span id="ingCount">0/0</span></span>
-      <span id="ingArrow">▼</span>
-    </button>
-    <div id="ingredientList"></div>
+<!-- 완료 화면 -->
+<div class="screen" id="s-done">
+  <div class="container">
+    <div class="done-wrap">
+      <div class="done-icon">✅</div>
+      <div class="done-title">오늘 마감 완료!</div>
+      <div class="done-sub" id="done-sub"></div>
+      <button class="reset-btn" onclick="backToMain()">← 체크리스트 보기</button>
+      <div class="undo-link" id="undoLink">실수했어요 — 완료 취소하기</div>
+    </div>
   </div>
+</div>
 
-  <div class="progress-wrap">
-    전체 진행률 <span id="progressText">0/0</span>
-    <div class="bar"><div class="bar-fill" id="progressBar"></div></div>
-  </div>
-  <a class="sheet-link" id="sheetLink" href="#" target="_blank" style="display:none;">📋 전체 기록 (구글시트) 보기</a>
-</main>
-
-<footer>
-  <button class="complete-btn" id="completeBtn">전부 체크하면 완료할 수 있어요</button>
-</footer>
+<!-- 로딩 -->
+<div class="loading-ov" id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">저장 중…</div>
+</div>
 
 <script>
-  const KST_OPTS = { timeZone: 'Asia/Seoul' };
-  const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+// ── 설정 ──────────────────────────────────────────────
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxeauYyGzxWMcPSrpHAidBAnYMuIZW3XqmGg1gTomZfuM7vdmfJl2y-VG1Hk72ohFhTZg/exec';
 
-  let itemDefs = null;
-  let currentState = null;
-  let todayKey = '';
+// ── 체크리스트 항목 (Code.gs와 동일하게 유지) ──────────
+// 아코디언(그룹) 항목을 먼저, 낱개 항목을 뒤에 배치
+const FILL_SEQUENCE = [
+  { type: 'group', id: 'g_sauce', label: '소스류', items: [
+    { id: 'gs1', label: '국수소스' },
+    { id: 'gs2', label: '파장소스' },
+    { id: 'gs3', label: '들기름' },
+  ]},
+  { type: 'group', id: 'g_left', label: '찬냉장고 하단[좌측]', items: [
+    { id: 'gl1', label: '라면용대파' },
+    { id: 'gl2', label: '다진고추' },
+    { id: 'gl3', label: '다진대파' },
+    { id: 'gl4', label: '전골용배추' },
+    { id: 'gl5', label: '전골용대파' },
+    { id: 'gl6', label: '단무지' },
+    { id: 'gl7', label: '다대기' },
+    { id: 'gl8', label: '다진마늘' },
+    { id: 'gl9', label: '묵은지' },
+    { id: 'gl10', label: '미나리' },
+  ]},
+  { type: 'group', id: 'g_right', label: '찬냉장고 하단[우측]', items: [
+    { id: 'gr1', label: '천엽' },
+    { id: 'gr2', label: '대파김치' },
+    { id: 'gr3', label: '볶음밥김치' },
+    { id: 'gr4', label: '깍두기' },
+    { id: 'gr5', label: '양파소스' },
+  ]},
+  { type: 'group', id: 'g_six', label: '6구냉장고', items: [
+    { id: 'g6_1', label: '전골용 내장' },
+    { id: 'g6_2', label: '전골용 고추' },
+    { id: 'g6_3', label: '콩나물' },
+    { id: 'g6_4', label: '레몬' },
+    { id: 'g6_5', label: '오이' },
+  ]},
+  { type: 'group', id: 'g_meat', label: '고기냉장고', items: [
+    { id: 'gm1', label: '고기정리' },
+    { id: 'gm2', label: '양파' },
+    { id: 'gm3', label: '떡' },
+  ]},
+  { type: 'item', id: 'f_banchan', label: '찬냉장고 반찬리필' },
+  { type: 'item', id: 'f_fireshow', label: '불쇼술 채우기' },
+  { type: 'item', id: 'f_drink', label: '술, 음료 채우기' },
+  { type: 'item', id: 'f_grape', label: '청포도, 이쑤시개 채우기' },
+  { type: 'item', id: 'f_broth', label: '육수 확인' },
+  { type: 'item', id: 'f_gammi', label: '감미 채우기' },
+];
 
-  function computeTodayKey() {
-    const now = new Date();
-    const kstStr = now.toLocaleString('en-US', KST_OPTS);
-    const d = new Date(kstStr);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return { key: `${y}-${m}-${day}`, month: d.getMonth() + 1, date: d.getDate(), weekday: WEEKDAYS[d.getDay()] };
-  }
+const CLEAN_ITEMS = [
+  { id: 'c1', label: '쓴 행주 전부 삶기 (테이블행주 포함)' },
+  { id: 'c2', label: '술박스 정리하기' },
+  { id: 'c3', label: '화구 라인 청소' },
+  { id: 'c4', label: '식기세척기 끄고 청소' },
+];
 
-  function getName() {
-    return document.getElementById('nameInput').value.trim();
-  }
+const WEEKLY_ITEMS = [
+  { id: 'w1', label: '덕트 청소', weekday: 1 }, // 1 = 월요일
+];
 
-  function requireName() {
-    const name = getName();
-    if (!name) {
-      alert('먼저 이름을 입력해주세요.');
-      document.getElementById('nameInput').focus();
-      return null;
+const MONTHLY_ITEMS = [
+  { id: 'm1', label: '냉장고 성에제거 및 청소' },
+  { id: 'm2', label: '주방바닥 퐁퐁청소' },
+  { id: 'm3', label: '유리 청소' },
+];
+
+const FINAL_ITEMS = [
+  { id: 'x1', label: '고기·식자재 발주 무조건 하기' },
+  { id: 'x2', label: '저녁 먹을 거 확인 후 주문' },
+  { id: 'x3', label: '에어컨 끄기 (홀3, 주방1)' },
+  { id: 'x4', label: '가스 끄기' },
+  { id: 'x5', label: '마감정산·시재 맞추기' },
+];
+
+function flattenFillItems() {
+  const out = [];
+  FILL_SEQUENCE.forEach(entry => {
+    if (entry.type === 'group') entry.items.forEach(it => out.push(it));
+    else out.push({ id: entry.id, label: entry.label });
+  });
+  return out;
+}
+
+// ── 날짜 (KST 기준) ─────────────────────────────────────
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+function todayInfo() {
+  const kstStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' });
+  const d = new Date(kstStr);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return {
+    key: `${y}-${m}-${day}`,
+    monthKey: `${y}-${m}`,
+    label: `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAYS[d.getDay()]})`,
+    dow: d.getDay(),
+    day: d.getDate(),
+    daysInMonth: new Date(y, d.getMonth() + 1, 0).getDate(),
+  };
+}
+const TODAY = todayInfo();
+const IS_MONDAY = TODAY.dow === 1;
+const DAYS_LEFT_IN_MONTH = TODAY.daysInMonth - TODAY.day;
+
+const REQUIRED_ITEMS = flattenFillItems()
+  .concat(CLEAN_ITEMS)
+  .concat(IS_MONDAY ? WEEKLY_ITEMS : [])
+  .concat(FINAL_ITEMS);
+
+let currentState = { checks: {}, completed: false };
+let monthlyState = { checks: {} };
+let openGroups = {};
+
+// ── 화면 전환 ─────────────────────────────────────────
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+function backToMain() { show('s-main'); }
+function showLoading(v, text) {
+  document.getElementById('loading-text').textContent = text || '저장 중…';
+  document.getElementById('loading').classList[v ? 'add' : 'remove']('show');
+}
+
+// ── JSONP GET ────────────────────────────────────────────
+function jsonp(params) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+    const timeout = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 10000);
+    function cleanup() {
+      clearTimeout(timeout);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
     }
-    return name;
-  }
+    window[cbName] = function (data) { cleanup(); resolve(data); };
+    const qs = Object.keys(params).map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k])).join('&');
+    const script = document.createElement('script');
+    script.src = GAS_URL + '?' + qs + '&callback=' + cbName;
+    script.onerror = () => { cleanup(); reject(new Error('jsonp load error')); };
+    document.body.appendChild(script);
+  });
+}
 
-  function init() {
-    const info = computeTodayKey();
-    todayKey = info.key;
-    document.getElementById('dateLabel').textContent = `${info.month}월 ${info.date}일 (${info.weekday})`;
+// ── POST (fire-and-forget) ──────────────────────────────
+function postAction(payload) {
+  return fetch(GAS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
 
-    const savedName = localStorage.getItem('마감체크_이름');
-    if (savedName) document.getElementById('nameInput').value = savedName;
-    document.getElementById('nameInput').addEventListener('change', function () {
-      localStorage.setItem('마감체크_이름', this.value.trim());
-    });
+// ── 렌더링 ────────────────────────────────────────────
+function taskRowHtml(item, extraClass) {
+  return `
+    <div class="task-row${extraClass ? ' ' + extraClass : ''}" id="row-${item.id}" data-id="${item.id}">
+      <div class="task-check" id="chk-${item.id}"></div>
+      <div class="task-body">
+        <div class="task-label">${item.label}</div>
+        <div class="task-meta" id="meta-${item.id}"></div>
+      </div>
+    </div>`;
+}
 
-    document.getElementById('ingToggle').addEventListener('click', function () {
-      const list = document.getElementById('ingredientList');
-      const open = list.classList.toggle('open');
-      document.getElementById('ingArrow').textContent = open ? '▲' : '▼';
-    });
-
-    document.getElementById('completeBtn').addEventListener('click', onCompleteClick);
-
-    google.script.run.withSuccessHandler(onItemDefs).getItemDefinitions();
-    google.script.run.withSuccessHandler(function (url) {
-      const a = document.getElementById('sheetLink');
-      a.href = url;
-      a.style.display = 'block';
-    }).getSheetUrl();
-
-    setInterval(refreshState, 6000);
-  }
-
-  function onItemDefs(defs) {
-    itemDefs = defs;
-    renderShell();
-    refreshState();
-  }
-
-  function renderShell() {
-    document.getElementById('baseList').innerHTML = itemDefs.base.map(renderItemHtml).join('');
-    document.getElementById('extraList').innerHTML = itemDefs.extra.map(renderItemHtml).join('');
-    document.getElementById('ingredientList').innerHTML = itemDefs.ingredient.map(renderItemHtml).join('');
-
-    document.querySelectorAll('input[type="checkbox"][data-id]').forEach(function (cb) {
-      cb.addEventListener('change', onCheckboxChange);
-    });
-  }
-
-  function renderItemHtml(item) {
-    return `
-      <div class="item" id="item-${item.id}">
-        <input type="checkbox" id="cb-${item.id}" data-id="${item.id}" data-label="${item.label}">
-        <div class="label-wrap">
-          <div class="label">${item.label}</div>
-          <div class="meta" id="meta-${item.id}"></div>
+function groupCardHtml(group) {
+  return `
+    <div class="group-card" id="gcard-${group.id}">
+      <div class="group-head">
+        <div class="group-check-wrap" id="gcheck-wrap-${group.id}">
+          <div class="task-check" id="gcheck-${group.id}"></div>
+          <span class="group-title">${group.label}</span>
         </div>
-      </div>`;
+        <span class="group-right" id="gright-${group.id}">
+          <span class="group-count" id="gcount-${group.id}">0/${group.items.length}</span>
+          <span class="group-arrow" id="garrow-${group.id}">▾</span>
+        </span>
+      </div>
+      <div class="group-body" id="gbody-${group.id}">
+        <div class="check-row">
+          ${group.items.map(it => `<div class="check-chip" id="chip-${it.id}" data-id="${it.id}">${it.label}</div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+function monthlyRowHtml(item) {
+  return `
+    <div class="task-row monthly" id="row-${item.id}" data-id="${item.id}">
+      <div class="task-check" id="chk-${item.id}"></div>
+      <div class="task-body">
+        <div class="task-label">${item.label}</div>
+        <div class="task-meta" id="meta-${item.id}"></div>
+      </div>
+    </div>`;
+}
+
+function renderShell() {
+  document.getElementById('date-val').textContent = TODAY.label;
+
+  document.getElementById('fillList').innerHTML = FILL_SEQUENCE.map(entry =>
+    entry.type === 'group' ? groupCardHtml(entry) : taskRowHtml(entry)
+  ).join('');
+
+  document.getElementById('cleanList').innerHTML = CLEAN_ITEMS.map(it => taskRowHtml(it)).join('');
+  document.getElementById('finalList').innerHTML = FINAL_ITEMS.map(it => taskRowHtml(it, 'extra')).join('');
+
+  if (IS_MONDAY) {
+    document.getElementById('weeklyTitle').style.display = '';
+    document.getElementById('weeklyList').innerHTML = WEEKLY_ITEMS.map(it => taskRowHtml(it, 'weekly')).join('');
   }
 
-  function refreshState() {
-    if (!itemDefs) return;
-    google.script.run.withSuccessHandler(onState).getState(todayKey);
-  }
+  document.getElementById('monthlyList').innerHTML = MONTHLY_ITEMS.map(it => monthlyRowHtml(it)).join('');
 
-  function onState(state) {
-    currentState = state;
-    const allItems = [].concat(itemDefs.base, itemDefs.extra, itemDefs.ingredient);
-    let checkedCount = 0;
+  // 이벤트 연결: 낱개 항목 (채우기 낱개 + 청소 + 정기청소 + 마지막확인)
+  FILL_SEQUENCE.filter(e => e.type === 'item').concat(CLEAN_ITEMS, WEEKLY_ITEMS, FINAL_ITEMS).forEach(it => {
+    const el = document.getElementById('row-' + it.id);
+    if (el) el.addEventListener('click', () => onToggle(it));
+  });
 
-    allItems.forEach(function (item) {
-      const c = state.checks[item.id];
-      const cb = document.getElementById('cb-' + item.id);
-      const row = document.getElementById('item-' + item.id);
-      const meta = document.getElementById('meta-' + item.id);
-      if (!cb) return;
-      const isChecked = !!(c && c.checked);
-      cb.checked = isChecked;
-      cb.disabled = state.completed;
-      row.classList.toggle('checked', isChecked);
-      meta.textContent = isChecked && c.by ? `${c.by} · ${c.at}` : '';
-      if (isChecked) checkedCount++;
+  // 이벤트 연결: 그룹 (헤더 체크 = 전체 일괄 체크/해제, 화살표 = 펼치기만)
+  FILL_SEQUENCE.filter(e => e.type === 'group').forEach(group => {
+    document.getElementById('gcheck-wrap-' + group.id).addEventListener('click', () => onToggleGroup(group));
+    document.getElementById('gright-' + group.id).addEventListener('click', () => {
+      openGroups[group.id] = !openGroups[group.id];
+      document.getElementById('gbody-' + group.id).classList.toggle('open', openGroups[group.id]);
+      document.getElementById('garrow-' + group.id).textContent = openGroups[group.id] ? '▴' : '▾';
     });
+  });
 
-    const ingCheckedCount = itemDefs.ingredient.filter(function (it) {
-      const c = state.checks[it.id];
-      return c && c.checked;
-    }).length;
-    document.getElementById('ingCount').textContent = `${ingCheckedCount}/${itemDefs.ingredient.length}`;
+  // 이벤트 연결: 월간 항목
+  MONTHLY_ITEMS.forEach(it => {
+    const el = document.getElementById('row-' + it.id);
+    if (el) el.addEventListener('click', () => onToggleMonthly(it));
+  });
 
-    const total = allItems.length;
-    document.getElementById('progressText').textContent = `${checkedCount}/${total}`;
-    document.getElementById('progressBar').style.width = total ? (checkedCount / total * 100) + '%' : '0%';
+  document.getElementById('completeBtn').addEventListener('click', onCompleteClick);
+  document.getElementById('undoLink').addEventListener('click', onUndoClick);
+}
 
-    const btn = document.getElementById('completeBtn');
-    if (state.completed) {
-      btn.style.display = 'none';
-    } else {
-      btn.style.display = 'block';
-      const ready = checkedCount === total;
-      btn.classList.toggle('ready', ready);
-      btn.textContent = ready ? '오늘 마감 완료하기' : `전부 체크하면 완료할 수 있어요 (${checkedCount}/${total})`;
-    }
+function renderState() {
+  let checkedCount = 0;
 
-    renderDoneBanner(state);
+  REQUIRED_ITEMS.forEach(item => {
+    const c = currentState.checks[item.id];
+    const isChecked = !!(c && c.checked);
+    if (isChecked) checkedCount++;
+    applyItemVisual(item.id, isChecked, c);
+  });
+
+  // 그룹 카운트 뱃지 + 그룹 체크 표시
+  FILL_SEQUENCE.filter(e => e.type === 'group').forEach(group => {
+    const doneCount = group.items.filter(it => currentState.checks[it.id] && currentState.checks[it.id].checked).length;
+    const allDone = doneCount === group.items.length;
+    const badge = document.getElementById('gcount-' + group.id);
+    badge.textContent = `${doneCount}/${group.items.length}`;
+    badge.classList.toggle('done', allDone);
+    const gchk = document.getElementById('gcheck-' + group.id);
+    gchk.textContent = allDone ? '✓' : '';
+    gchk.classList.toggle('gchecked', allDone);
+    document.getElementById('gcard-' + group.id).classList.toggle('done', allDone);
+    document.getElementById('gcard-' + group.id).classList.toggle('locked', currentState.completed);
+  });
+
+  const total = REQUIRED_ITEMS.length;
+  document.getElementById('progressText').textContent = `${checkedCount}/${total}`;
+  document.getElementById('progressBar').style.width = total ? (checkedCount / total * 100) + '%' : '0%';
+
+  const btn = document.getElementById('completeBtn');
+  const ready = checkedCount === total;
+  btn.classList.toggle('ready', ready);
+  btn.textContent = ready ? '오늘 마감 완료하기' : `전부 체크하면 완료할 수 있어요 (${checkedCount}/${total})`;
+  btn.disabled = currentState.completed;
+
+  document.getElementById('sync-note').textContent = currentState.completed ? '✅ 완료됨' : '';
+
+  if (currentState.completed) {
+    document.getElementById('done-sub').textContent = `${TODAY.label} · ${currentState.completedAt || ''} 완료`;
   }
 
-  function renderDoneBanner(state) {
-    const wrap = document.getElementById('doneBannerWrap');
-    if (!state.completed) {
-      wrap.innerHTML = '';
-      return;
-    }
-    wrap.innerHTML = `
-      <div class="done-banner">
-        ✅ 오늘(${state.date}) 마감 완료! (${state.completedAt})<br>
-        참여: ${state.participants || '-'}
-        <br><button id="undoBtn">완료 취소 (실수했을 때)</button>
-      </div>`;
-    document.getElementById('undoBtn').addEventListener('click', function () {
-      if (!confirm('완료를 취소할까요? 다시 체크리스트를 수정할 수 있게 됩니다.')) return;
-      google.script.run.withSuccessHandler(onState).uncompleteDay(todayKey);
+  // 잠금 처리 (완료된 날은 항목 수정 불가)
+  document.querySelectorAll('.task-row').forEach(el => {
+    el.classList.toggle('locked', currentState.completed && !el.classList.contains('monthly'));
+  });
+}
+
+function applyItemVisual(id, isChecked, c) {
+  const row = document.getElementById('row-' + id);
+  const chip = document.getElementById('chip-' + id);
+  const chk = document.getElementById('chk-' + id);
+  const meta = document.getElementById('meta-' + id);
+  if (row) {
+    row.classList.toggle('checked', isChecked);
+    if (chk) chk.textContent = isChecked ? '✓' : '';
+    if (meta) meta.textContent = isChecked && c && c.at ? c.at : '';
+  }
+  if (chip) chip.classList.toggle('on', isChecked);
+}
+
+function renderMonthlyState() {
+  MONTHLY_ITEMS.forEach(item => {
+    const c = monthlyState.checks[item.id];
+    const isChecked = !!(c && c.checked);
+    const row = document.getElementById('row-' + item.id);
+    const chk = document.getElementById('chk-' + item.id);
+    const meta = document.getElementById('meta-' + item.id);
+    if (!row) return;
+    const urgent = !isChecked && DAYS_LEFT_IN_MONTH <= 6;
+    row.classList.toggle('checked', isChecked);
+    row.classList.toggle('urgent', urgent);
+    if (chk) chk.textContent = isChecked ? '✓' : '';
+    let tag = '';
+    if (isChecked) tag = `<span class="task-tag">이번 달 완료 · ${c.date ? c.date.slice(5).replace('-', '/') : ''}</span>`;
+    else if (urgent) tag = `<span class="task-tag">⚠️ 이번 달 마감 임박 (D-${DAYS_LEFT_IN_MONTH})</span>`;
+    if (meta) meta.innerHTML = tag;
+  });
+}
+
+// ── 상태 로드 & 폴링 ─────────────────────────────────────
+let loadingState = false;
+function loadState() {
+  if (loadingState) return;
+  loadingState = true;
+  jsonp({ action: 'state', date: TODAY.key })
+    .then(state => { currentState = state; renderState(); })
+    .catch(() => { document.getElementById('sync-note').textContent = '⚠️ 동기화 실패'; })
+    .finally(() => { loadingState = false; });
+}
+
+let loadingMonthly = false;
+function loadMonthlyState() {
+  if (loadingMonthly) return;
+  loadingMonthly = true;
+  jsonp({ action: 'monthly', month: TODAY.monthKey })
+    .then(state => { monthlyState = state; renderMonthlyState(); })
+    .catch(() => {})
+    .finally(() => { loadingMonthly = false; });
+}
+
+// ── 이벤트 핸들러 ────────────────────────────────────────
+function onToggle(item) {
+  if (currentState.completed) return;
+  const c = currentState.checks[item.id];
+  const nextChecked = !(c && c.checked);
+
+  currentState.checks[item.id] = { checked: nextChecked, at: '...' };
+  renderState();
+
+  postAction({ action: 'toggle', date: TODAY.key, itemId: item.id, itemLabel: item.label, checked: nextChecked })
+    .then(() => setTimeout(loadState, 700))
+    .catch(() => setTimeout(loadState, 700));
+}
+
+function onToggleGroup(group) {
+  if (currentState.completed) return;
+  const allChecked = group.items.every(it => currentState.checks[it.id] && currentState.checks[it.id].checked);
+  const nextChecked = !allChecked;
+
+  group.items.forEach(it => {
+    currentState.checks[it.id] = { checked: nextChecked, at: '...' };
+  });
+  renderState();
+
+  Promise.all(group.items.map(it =>
+    postAction({ action: 'toggle', date: TODAY.key, itemId: it.id, itemLabel: it.label, checked: nextChecked })
+  ))
+    .then(() => setTimeout(loadState, 700))
+    .catch(() => setTimeout(loadState, 700));
+}
+
+function onToggleMonthly(item) {
+  const c = monthlyState.checks[item.id];
+  const nextChecked = !(c && c.checked);
+  monthlyState.checks[item.id] = { checked: nextChecked, date: TODAY.key, at: '...' };
+  renderMonthlyState();
+
+  postAction({ action: 'toggleMonthly', month: TODAY.monthKey, itemId: item.id, checked: nextChecked })
+    .then(() => setTimeout(loadMonthlyState, 700))
+    .catch(() => setTimeout(loadMonthlyState, 700));
+}
+
+function onCompleteClick() {
+  if (currentState.completed) return;
+  const allChecked = REQUIRED_ITEMS.every(it => currentState.checks[it.id] && currentState.checks[it.id].checked);
+  if (!allChecked) { loadState(); return; }
+  if (!confirm('오늘 마감을 완료 처리할까요?')) return;
+
+  showLoading(true, '마감 완료 처리 중…');
+  postAction({ action: 'complete', date: TODAY.key })
+    .then(() => new Promise(r => setTimeout(r, 900)))
+    .then(() => jsonp({ action: 'state', date: TODAY.key }))
+    .then(state => {
+      currentState = state;
+      renderState();
+      showLoading(false);
+      show('s-done');
+    })
+    .catch(() => {
+      showLoading(false);
+      alert('처리 중 문제가 생겼어요. 다시 시도해주세요.');
+      loadState();
     });
-  }
+}
 
-  function onCheckboxChange(e) {
-    const name = requireName();
-    if (!name) {
-      e.target.checked = !e.target.checked;
-      return;
-    }
-    const id = e.target.getAttribute('data-id');
-    const label = e.target.getAttribute('data-label');
-    const checked = e.target.checked;
-    e.target.disabled = true;
-    google.script.run.withSuccessHandler(function (state) {
-      onState(state);
-    }).toggleItem(todayKey, id, label, checked, name);
-  }
-
-  function onCompleteClick() {
-    const name = requireName();
-    if (!name) return;
-    if (!currentState) return;
-    const allItems = [].concat(itemDefs.base, itemDefs.extra, itemDefs.ingredient);
-    const allChecked = allItems.every(function (it) {
-      const c = currentState.checks[it.id];
-      return c && c.checked;
+function onUndoClick() {
+  if (!confirm('완료를 취소할까요? 다시 체크리스트를 수정할 수 있게 됩니다.')) return;
+  showLoading(true, '완료 취소 중…');
+  postAction({ action: 'uncomplete', date: TODAY.key })
+    .then(() => new Promise(r => setTimeout(r, 900)))
+    .then(() => jsonp({ action: 'state', date: TODAY.key }))
+    .then(state => {
+      currentState = state;
+      renderState();
+      showLoading(false);
+      show('s-main');
+    })
+    .catch(() => {
+      showLoading(false);
+      loadState();
+      show('s-main');
     });
-    if (!allChecked) {
-      alert('아직 체크 안 된 항목이 있어요.');
-      return;
-    }
-    if (!confirm('오늘 마감을 완료 처리할까요?')) return;
-    google.script.run.withSuccessHandler(function (res) {
-      if (!res.ok) {
-        alert(res.message);
-        onState(res.state);
-        return;
-      }
-      onState(res.state);
-    }).completeDay(todayKey, name);
-  }
+}
 
-  init();
+// ── 초기화 ────────────────────────────────────────────
+renderShell();
+loadState();
+loadMonthlyState();
+setInterval(loadState, 8000);
+setInterval(loadMonthlyState, 30000);
 </script>
 </body>
 </html>
