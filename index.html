@@ -117,7 +117,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun 
     <div class="date-pill">
       <span class="dp-label">오늘</span>
       <span class="dp-val" id="date-val"></span>
-      <span class="dp-note" id="sync-note">동기화 중…</span>
+      <span class="dp-note" id="sync-note"></span>
     </div>
 
     <div class="sec-title">✅ 필수 마감 · 채우기</div>
@@ -279,7 +279,23 @@ const REQUIRED_ITEMS = flattenFillItems()
   .concat(IS_MONDAY ? WEEKLY_ITEMS : [])
   .concat(FINAL_ITEMS);
 
-let currentState = { checks: {}, completed: false };
+// v4: 체크 상태는 이제 서버와 공유하지 않고 이 폰(브라우저) 안에서만 관리한다.
+// 새로고침해도 오늘 하루 동안은 유지되도록 localStorage에 저장해둔다.
+const LOCAL_KEY = 'closingChecklist_' + TODAY.key;
+function loadLocalState() {
+  try {
+    const raw = localStorage.getItem(LOCAL_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return { checks: {}, completed: false, completedAt: '' };
+}
+function saveLocalState() {
+  try {
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(currentState));
+  } catch (e) {}
+}
+
+let currentState = loadLocalState();
 let monthlyState = { checks: {} };
 let openGroups = {};
 
@@ -489,17 +505,7 @@ function renderMonthlyState() {
   });
 }
 
-// ── 상태 로드 & 폴링 ─────────────────────────────────────
-let loadingState = false;
-function loadState() {
-  if (loadingState) return;
-  loadingState = true;
-  jsonp({ action: 'state', date: TODAY.key })
-    .then(state => { currentState = state; renderState(); })
-    .catch(() => { document.getElementById('sync-note').textContent = '⚠️ 동기화 실패'; })
-    .finally(() => { loadingState = false; });
-}
-
+// ── 월간청소만 서버와 공유 (한 달에 한 번이라 여러 명이 봐야 의미가 있음) ──
 let loadingMonthly = false;
 function loadMonthlyState() {
   if (loadingMonthly) return;
@@ -510,35 +516,34 @@ function loadMonthlyState() {
     .finally(() => { loadingMonthly = false; });
 }
 
-// ── 이벤트 핸들러 ────────────────────────────────────────
+function nowHHMM() {
+  const kstStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' });
+  const d = new Date(kstStr);
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
+// ── 이벤트 핸들러 (필수 마감 체크는 전부 이 폰 안에서만 처리, 서버 호출 없음) ──
 function onToggle(item) {
   if (currentState.completed) return;
   const c = currentState.checks[item.id];
   const nextChecked = !(c && c.checked);
 
-  currentState.checks[item.id] = { checked: nextChecked, at: '...' };
+  currentState.checks[item.id] = { checked: nextChecked, at: nowHHMM() };
+  saveLocalState();
   renderState();
-
-  postAction({ action: 'toggle', date: TODAY.key, itemId: item.id, itemLabel: item.label, checked: nextChecked })
-    .then(() => setTimeout(loadState, 700))
-    .catch(() => setTimeout(loadState, 700));
 }
 
 function onToggleGroup(group) {
   if (currentState.completed) return;
   const allChecked = group.items.every(it => currentState.checks[it.id] && currentState.checks[it.id].checked);
   const nextChecked = !allChecked;
+  const at = nowHHMM();
 
   group.items.forEach(it => {
-    currentState.checks[it.id] = { checked: nextChecked, at: '...' };
+    currentState.checks[it.id] = { checked: nextChecked, at: at };
   });
+  saveLocalState();
   renderState();
-
-  Promise.all(group.items.map(it =>
-    postAction({ action: 'toggle', date: TODAY.key, itemId: it.id, itemLabel: it.label, checked: nextChecked })
-  ))
-    .then(() => setTimeout(loadState, 700))
-    .catch(() => setTimeout(loadState, 700));
 }
 
 function onToggleMonthly(item) {
@@ -555,50 +560,40 @@ function onToggleMonthly(item) {
 function onCompleteClick() {
   if (currentState.completed) return;
   const allChecked = REQUIRED_ITEMS.every(it => currentState.checks[it.id] && currentState.checks[it.id].checked);
-  if (!allChecked) { loadState(); return; }
+  if (!allChecked) return;
   if (!confirm('오늘 마감을 완료 처리할까요?')) return;
 
-  showLoading(true, '마감 완료 처리 중…');
-  postAction({ action: 'complete', date: TODAY.key })
-    .then(() => new Promise(r => setTimeout(r, 900)))
-    .then(() => jsonp({ action: 'state', date: TODAY.key }))
-    .then(state => {
-      currentState = state;
-      renderState();
-      showLoading(false);
-      show('s-done');
-    })
-    .catch(() => {
-      showLoading(false);
-      alert('처리 중 문제가 생겼어요. 다시 시도해주세요.');
-      loadState();
-    });
+  showLoading(true, '완료 기록 중…');
+
+  // 완료를 누른 이 순간에만 서버에 딱 한 번 기록한다 (여러 명이 각자 눌러도
+  // 각각 새로 기록되는 것뿐이라 서로 겹치거나 충돌할 일이 없다).
+  postAction({ action: 'complete', date: TODAY.key });
+
+  currentState.completed = true;
+  currentState.completedAt = nowHHMM();
+  saveLocalState();
+  renderState();
+
+  setTimeout(() => {
+    showLoading(false);
+    show('s-done');
+  }, 400);
 }
 
 function onUndoClick() {
   if (!confirm('완료를 취소할까요? 다시 체크리스트를 수정할 수 있게 됩니다.')) return;
-  showLoading(true, '완료 취소 중…');
-  postAction({ action: 'uncomplete', date: TODAY.key })
-    .then(() => new Promise(r => setTimeout(r, 900)))
-    .then(() => jsonp({ action: 'state', date: TODAY.key }))
-    .then(state => {
-      currentState = state;
-      renderState();
-      showLoading(false);
-      show('s-main');
-    })
-    .catch(() => {
-      showLoading(false);
-      loadState();
-      show('s-main');
-    });
+  currentState.completed = false;
+  currentState.completedAt = '';
+  saveLocalState();
+  renderState();
+  show('s-main');
 }
 
 // ── 초기화 ────────────────────────────────────────────
 renderShell();
-loadState();
+renderState();
+if (currentState.completed) show('s-done');
 loadMonthlyState();
-setInterval(loadState, 8000);
 setInterval(loadMonthlyState, 30000);
 </script>
 </body>
