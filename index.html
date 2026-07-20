@@ -219,6 +219,7 @@ const FILL_SEQUENCE = [
   { type: 'item', id: 'f_grape', label: '청포도, 이쑤시개 채우기' },
   { type: 'item', id: 'f_broth', label: '육수 확인' },
   { type: 'item', id: 'f_gammi', label: '감미 채우기' },
+  { type: 'item', id: 'f_tissue', label: '테이블티슈 채우기' },
 ];
 
 const CLEAN_ITEMS = [
@@ -260,6 +261,12 @@ const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 function todayInfo() {
   const kstStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' });
   const d = new Date(kstStr);
+  // [영업일 기준] 오전 8시 이전이면 아직 "전날 마감"이 진행 중인 것으로 간주한다.
+  // 예: 월요일 마감을 자정 넘어 화요일 새벽에 체크해도 계속 월요일 마감으로 유지되고,
+  // 화요일 오전 8시가 되어야 새 날짜(화요일)의 빈 체크리스트로 넘어간다.
+  if (d.getHours() < 8) {
+    d.setDate(d.getDate() - 1);
+  }
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
