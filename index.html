@@ -220,9 +220,11 @@ const FILL_SEQUENCE = [
   { type: 'item', id: 'f_broth', label: '육수 확인' },
   { type: 'item', id: 'f_gammi', label: '감미 채우기' },
   { type: 'item', id: 'f_tissue', label: '테이블티슈 채우기' },
+  { type: 'item', id: 'f_napkin', label: '냅킨 채우기' },
 ];
 
 const CLEAN_ITEMS = [
+  { id: 'c0', label: '테이블 다시 닦기' },
   { id: 'c1', label: '쓴 행주 전부 삶기 (테이블행주 포함)' },
   { id: 'c2', label: '술박스 정리하기' },
   { id: 'c3', label: '화구 라인 청소' },
@@ -597,6 +599,22 @@ function onUndoClick() {
   renderState();
   show('s-main');
 }
+
+// ── 영업일 자동 전환 감지 ────────────────────────────────
+// TODAY는 페이지가 처음 로드될 때 딱 한 번만 계산된다. 그래서 앱(특히 홈화면
+// 아이콘으로 열어둔 iOS PWA)을 계속 켜/백그라운드에 둔 채로 실제 시각이
+// 오전 8시 기준을 넘어가도, 새로고침을 하지 않으면 화면은 계속 이전 영업일
+// 상태(예: 전날 완료 화면)로 멈춰 있는 문제가 있었다.
+// → 1분마다, 그리고 앱이 다시 화면에 보일 때마다 오늘의 영업일을 다시 계산해서
+//   페이지 로드 시점과 날짜가 달라졌으면 자동으로 새로고침해 새 영업일의
+//   빈 체크리스트로 넘어가게 한다.
+function checkBusinessDayRollover() {
+  if (todayInfo().key !== TODAY.key) location.reload();
+}
+setInterval(checkBusinessDayRollover, 60000);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') checkBusinessDayRollover();
+});
 
 // ── 초기화 ────────────────────────────────────────────
 renderShell();
