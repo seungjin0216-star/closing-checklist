@@ -106,6 +106,39 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun 
 .spinner{width:44px;height:44px;border:4px solid #e0e0e0;border-top-color:#7c3aed;border-radius:50%;animation:spin .8s linear infinite}
 .loading-text{font-size:15px;color:#636366}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── 오픈/마감 전환 ── */
+.mode-tabs{display:flex;gap:8px;margin:14px 0 4px}
+.mode-tab{flex:1;padding:12px 0;text-align:center;border-radius:14px;border:1.5px solid #e0e0e0;background:#fff;font-size:15px;font-weight:600;color:#8e8e93;cursor:pointer;transition:all .12s}
+.mode-tab.active{background:#1c1c1e;border-color:#1c1c1e;color:#fff}
+.mode-tab.open.active{background:#0284c7;border-color:#0284c7}
+
+/* ── 마감에서 넘어온 항목 ── */
+.sec-title.carry{color:#b45309}
+.task-row.carry{border-color:#fcd34d;background:#fffbeb}
+.task-row.carry .task-check{border-color:#fbbf24}
+.task-row.carry.checked{border-color:#f59e0b;background:#fffbeb}
+.task-row.carry.checked .task-check{background:#f59e0b;border-color:#f59e0b}
+.carry-from{font-size:11px;color:#a16207;margin-top:2px}
+.carry-empty{padding:14px 16px;border-radius:14px;background:#f7f7f7;color:#8e8e93;font-size:13px;text-align:center}
+
+/* ── 이월 선택 모달 ── */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:998;align-items:flex-end;justify-content:center}
+.modal-ov.show{display:flex}
+.modal-box{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:86vh;display:flex;flex-direction:column}
+.modal-head{padding:18px 20px 12px;border-bottom:1px solid #f0f0f0}
+.modal-title{font-size:17px;font-weight:700;color:#1c1c1e}
+.modal-sub{font-size:13px;color:#8e8e93;margin-top:5px;line-height:1.5}
+.modal-body{overflow-y:auto;padding:12px 16px;flex:1}
+.carry-group{margin-bottom:14px}
+.carry-group-title{font-size:12px;font-weight:700;color:#636366;margin-bottom:7px;padding-left:2px}
+.carry-chips{display:flex;flex-wrap:wrap;gap:7px}
+.carry-chip{padding:9px 13px;border-radius:11px;border:1.5px solid #e0e0e0;background:#fff;font-size:14px;color:#3a3a3c;cursor:pointer;transition:all .1s}
+.carry-chip.on{background:#fffbeb;border-color:#f59e0b;color:#b45309;font-weight:600}
+.modal-foot{padding:12px 16px 20px;border-top:1px solid #f0f0f0;display:flex;gap:8px}
+.modal-foot button{flex:1;padding:15px;border-radius:14px;border:none;font-size:15px;font-weight:600;cursor:pointer}
+.modal-skip{background:#f0f0f0;color:#636366}
+.modal-go{background:#1c1c1e;color:#fff}
 </style>
 </head>
 <body>
@@ -114,7 +147,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun 
 <div class="screen active" id="s-main">
   <div class="container">
     <div class="brand">🍽 장수한우곱창</div>
-    <div class="brand-loc">🟢 백석직영점 · 마감체크리스트</div>
+    <div class="brand-loc">🟢 백석직영점 · 장수 매뉴얼</div>
+
+    <div class="mode-tabs">
+      <div class="mode-tab open" id="tab-open" onclick="setMode('open')">🌅 오픈</div>
+      <div class="mode-tab active" id="tab-close" onclick="setMode('close')">🌙 마감</div>
+    </div>
 
     <div class="date-pill">
       <span class="dp-label">오늘</span>
@@ -122,21 +160,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun 
       <span class="dp-note" id="sync-note"></span>
     </div>
 
-    <div class="sec-title">✅ 필수 마감 · 채우기</div>
-    <div id="fillList"></div>
+    <!-- ── 오픈 ── -->
+    <div id="mode-open" style="display:none">
+      <div class="sec-title">🌅 오픈 준비</div>
+      <div id="openList"></div>
 
-    <div class="sec-title">🧹 청소</div>
-    <div id="cleanList"></div>
+      <div class="sec-title carry">🔁 마감에서 넘어온 것</div>
+      <div class="sec-note">어제 마감 때 못 하고 넘긴 항목입니다.</div>
+      <div id="carryList"></div>
+    </div>
 
-    <div class="sec-title" id="weeklyTitle" style="display:none">🗓️ 정기 청소 (이번주)</div>
-    <div id="weeklyList"></div>
+    <!-- ── 마감 ── -->
+    <div id="mode-close">
+      <div class="sec-title">✅ 필수 마감 · 채우기</div>
+      <div id="fillList"></div>
 
-    <div class="sec-title extra">🔒 마지막 확인</div>
-    <div id="finalList"></div>
+      <div class="sec-title">🧹 청소</div>
+      <div id="cleanList"></div>
 
-    <div class="sec-title monthly">📅 월간 청소 (한 달에 한 번)</div>
-    <div class="sec-note">체크 안 해도 오늘 마감은 완료할 수 있어요. 이번 달에 한 번만 하면 됩니다.</div>
-    <div id="monthlyList"></div>
+      <div class="sec-title" id="weeklyTitle" style="display:none">🗓️ 정기 청소 (이번주)</div>
+      <div id="weeklyList"></div>
+
+      <div class="sec-title extra">🔒 마지막 확인</div>
+      <div id="finalList"></div>
+
+      <div class="sec-title monthly">📅 월간 청소 (한 달에 한 번)</div>
+      <div class="sec-note">체크 안 해도 오늘 마감은 완료할 수 있어요. 이번 달에 한 번만 하면 됩니다.</div>
+      <div id="monthlyList"></div>
+    </div>
 
     <div class="progress-wrap">
       전체 진행률 <span id="progressText">0/0</span>
@@ -151,12 +202,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun 
   </div>
 </div>
 
+<!-- 마감 완료 직전: 오픈으로 넘길 항목 고르기 -->
+<div class="modal-ov" id="carry-modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title">오픈 때 해야 할 일이 있나요?</div>
+      <div class="modal-sub">재료가 없거나 시간이 없어 못 한 것을 골라주세요.<br>내일 오픈 화면에 표시됩니다. 없으면 그냥 넘어가시면 됩니다.</div>
+    </div>
+    <div class="modal-body" id="carry-picker"></div>
+    <div class="modal-foot">
+      <button class="modal-skip" onclick="finishClosing(false)">없어요</button>
+      <button class="modal-go" onclick="finishClosing(true)">넘기고 완료</button>
+    </div>
+  </div>
+</div>
+
 <!-- 완료 화면 -->
 <div class="screen" id="s-done">
   <div class="container">
     <div class="done-wrap">
       <div class="done-icon">✅</div>
-      <div class="done-title">오늘 마감 완료!</div>
+      <div class="done-title" id="done-title-text">오늘 마감 완료!</div>
       <div class="done-sub" id="done-sub"></div>
       <button class="reset-btn" onclick="backToMain()">← 체크리스트 보기</button>
       <div class="undo-link" id="undoLink">실수했어요 — 완료 취소하기</div>
@@ -182,6 +248,7 @@ const FILL_SEQUENCE = [
     { id: 'gs2', label: '파장소스' },
     { id: 'gs3', label: '들기름' },
   ]},
+  { type: 'item', id: 'f_saltjang', label: '소금장 채우기' },
   { type: 'group', id: 'g_left', label: '찬냉장고 하단[좌측]', items: [
     { id: 'gl1', label: '라면용대파' },
     { id: 'gl2', label: '다진고추' },
@@ -214,14 +281,28 @@ const FILL_SEQUENCE = [
     { id: 'gm3', label: '떡' },
   ]},
   { type: 'item', id: 'f_banchan', label: '찬냉장고 반찬리필' },
+  { type: 'item', id: 'f_pajang', label: '파장 만들기' },
+  { type: 'item', id: 'f_powder', label: '고춧가루·다시다 채우고 뚜껑 닫기' },
   { type: 'item', id: 'f_fireshow', label: '불쇼술 채우기' },
   { type: 'item', id: 'f_drink', label: '술, 음료 채우기' },
   { type: 'item', id: 'f_grape', label: '청포도, 이쑤시개 채우기' },
   { type: 'item', id: 'f_broth', label: '육수 확인' },
   { type: 'item', id: 'f_gammi', label: '감미 채우기' },
   { type: 'item', id: 'f_tissue', label: '테이블티슈 채우기' },
-  { type: 'item', id: 'f_napkin', label: '냅킨 채우기' },
 ];
+
+// ── 오픈 항목 ──────────────────────────────────────────
+const OPEN_ITEMS = [
+  { id: 'o1', label: '밥하기' },
+  { id: 'o2', label: '육수 확인' },
+  { id: 'o3', label: '고기 확인' },
+  { id: 'o4', label: '홀테이블·데크바닥 정리' },
+  { id: 'o5', label: '예약 확인' },
+  { id: 'o6', label: '테이블 닦기' },
+];
+
+// 마감 때 못 하면 오픈으로 넘길 수 있는 그룹 (재료 손질이 대부분 여기서 나온다)
+const CARRY_GROUP_IDS = ['g_left', 'g_right', 'g_six', 'g_meat'];
 
 const CLEAN_ITEMS = [
   { id: 'c0', label: '테이블 다시 닦기' },
@@ -229,6 +310,7 @@ const CLEAN_ITEMS = [
   { id: 'c2', label: '술박스 정리하기' },
   { id: 'c3', label: '화구 라인 청소' },
   { id: 'c4', label: '식기세척기 끄고 청소' },
+  { id: 'c5', label: '쓰레기(분리수거) 비우기' },
 ];
 
 const WEEKLY_ITEMS = [
@@ -290,6 +372,22 @@ const REQUIRED_ITEMS = flattenFillItems()
   .concat(IS_MONDAY ? WEEKLY_ITEMS : [])
   .concat(FINAL_ITEMS);
 
+// 어제 마감의 영업일 키 (오늘 오픈이 이어받을 이월 항목을 찾을 때 쓴다)
+function prevDayKey(key) {
+  const d = new Date(key + 'T12:00:00');
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
+// 오픈 / 마감 중 어느 화면을 먼저 보여줄지
+// 아침 8시 ~ 오후 4시는 오픈, 그 외는 마감
+function defaultMode() {
+  const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+  const h = d.getHours();
+  return (h >= 8 && h < 16) ? 'open' : 'close';
+}
+let MODE = defaultMode();
+
 // v4: 체크 상태는 이제 서버와 공유하지 않고 이 폰(브라우저) 안에서만 관리한다.
 // 새로고침해도 오늘 하루 동안은 유지되도록 localStorage에 저장해둔다.
 const LOCAL_KEY = 'closingChecklist_' + TODAY.key;
@@ -309,6 +407,22 @@ function saveLocalState() {
 let currentState = loadLocalState();
 let monthlyState = { checks: {} };
 let openGroups = {};
+
+// ── 오픈 상태 (마감과 따로 저장) ──────────────────────
+const OPEN_KEY = 'openChecklist_' + TODAY.key;
+function loadOpenState() {
+  try {
+    const raw = localStorage.getItem(OPEN_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return { checks: {}, completed: false, completedAt: '' };
+}
+function saveOpenState() {
+  try { localStorage.setItem(OPEN_KEY, JSON.stringify(openState)); } catch (e) {}
+}
+let openState = loadOpenState();
+let carriedItems = [];   // 어제 마감에서 넘어온 항목 [{id,label,group}]
+let carryPicked = {};    // 마감 완료 직전 모달에서 고른 항목
 
 // ── 화면 전환 ─────────────────────────────────────────
 function show(id) {
@@ -434,11 +548,65 @@ function renderShell() {
     if (el) el.addEventListener('click', () => onToggleMonthly(it));
   });
 
+  // 오픈 항목
+  document.getElementById('openList').innerHTML = OPEN_ITEMS.map(it => taskRowHtml(it)).join('');
+  OPEN_ITEMS.forEach(it => {
+    const el = document.getElementById('row-' + it.id);
+    if (el) el.addEventListener('click', () => onToggleOpen(it));
+  });
+
   document.getElementById('completeBtn').addEventListener('click', onCompleteClick);
   document.getElementById('undoLink').addEventListener('click', onUndoClick);
 }
 
+// ── 오픈/마감 전환 ────────────────────────────────────
+function setMode(mode) {
+  MODE = mode;
+  document.getElementById('tab-open').classList.toggle('active', mode === 'open');
+  document.getElementById('tab-close').classList.toggle('active', mode === 'close');
+  document.getElementById('mode-open').style.display = mode === 'open' ? '' : 'none';
+  document.getElementById('mode-close').style.display = mode === 'close' ? '' : 'none';
+  renderState();
+  window.scrollTo(0, 0);
+}
+
+// ── 오픈 렌더링 ───────────────────────────────────────
+function renderCarryList() {
+  const box = document.getElementById('carryList');
+  if (!carriedItems.length) {
+    box.innerHTML = '<div class="carry-empty">넘어온 항목이 없습니다 👍</div>';
+    return;
+  }
+  box.innerHTML = carriedItems.map(it => `
+    <div class="task-row carry" id="row-${it.id}" data-id="${it.id}">
+      <div class="task-check" id="chk-${it.id}"></div>
+      <div class="task-body">
+        <div class="task-label">${it.label}</div>
+        <div class="carry-from">${it.group || ''}</div>
+      </div>
+    </div>`).join('');
+
+  carriedItems.forEach(it => {
+    const el = document.getElementById('row-' + it.id);
+    if (el) el.addEventListener('click', () => onToggleOpen(it));
+  });
+  renderState();
+}
+
+function openRequiredItems() {
+  return OPEN_ITEMS.concat(carriedItems);
+}
+
+function onToggleOpen(item) {
+  if (openState.completed) return;
+  const c = openState.checks[item.id];
+  openState.checks[item.id] = { checked: !(c && c.checked), at: nowHHMM() };
+  saveOpenState();
+  renderState();
+}
+
 function renderState() {
+  if (MODE === 'open') return renderOpenState();
   let checkedCount = 0;
 
   REQUIRED_ITEMS.forEach(item => {
@@ -481,6 +649,33 @@ function renderState() {
   // 잠금 처리 (완료된 날은 항목 수정 불가)
   document.querySelectorAll('.task-row').forEach(el => {
     el.classList.toggle('locked', currentState.completed && !el.classList.contains('monthly'));
+  });
+}
+
+function renderOpenState() {
+  const items = openRequiredItems();
+  let checked = 0;
+  items.forEach(item => {
+    const c = openState.checks[item.id];
+    const on = !!(c && c.checked);
+    if (on) checked++;
+    applyItemVisual(item.id, on, c);
+  });
+
+  const total = items.length;
+  document.getElementById('progressText').textContent = `${checked}/${total}`;
+  document.getElementById('progressBar').style.width = total ? (checked / total * 100) + '%' : '0%';
+
+  const btn = document.getElementById('completeBtn');
+  const ready = total > 0 && checked === total;
+  btn.classList.toggle('ready', ready);
+  btn.textContent = openState.completed ? '오픈 완료됨'
+    : ready ? '오픈 준비 완료하기' : `전부 체크하면 완료할 수 있어요 (${checked}/${total})`;
+  btn.disabled = openState.completed;
+  document.getElementById('sync-note').textContent = openState.completed ? '✅ 오픈 완료' : '';
+
+  document.querySelectorAll('#mode-open .task-row').forEach(el => {
+    el.classList.toggle('locked', openState.completed);
   });
 }
 
@@ -569,26 +764,110 @@ function onToggleMonthly(item) {
 }
 
 function onCompleteClick() {
+  if (MODE === 'open') return onCompleteOpen();
+
   if (currentState.completed) return;
   const allChecked = REQUIRED_ITEMS.every(it => currentState.checks[it.id] && currentState.checks[it.id].checked);
   if (!allChecked) return;
-  if (!confirm('오늘 마감을 완료 처리할까요?')) return;
+
+  // 완료 직전에 "오픈으로 넘길 일"을 한 번 물어본다.
+  // 항목마다 버튼을 다는 대신 여기서 한 번에 고르게 해서 평소 체크를 방해하지 않는다.
+  carryPicked = {};
+  openCarryModal();
+}
+
+function onCompleteOpen() {
+  if (openState.completed) return;
+  const items = openRequiredItems();
+  if (!items.every(it => openState.checks[it.id] && openState.checks[it.id].checked)) return;
+  if (!confirm('오픈 준비를 완료 처리할까요?')) return;
+
+  showLoading(true, '완료 기록 중…');
+  postAction({
+    action: 'completeOpen',
+    date: TODAY.key,
+    carried: carriedItems.map(it => it.label).join(', '),
+  });
+
+  openState.completed = true;
+  openState.completedAt = nowHHMM();
+  saveOpenState();
+  renderState();
+
+  setTimeout(() => {
+    showLoading(false);
+    document.getElementById('done-title-text').textContent = '오픈 준비 완료!';
+    document.getElementById('done-sub').textContent = `${TODAY.label} · ${openState.completedAt} 완료`;
+    show('s-done');
+  }, 400);
+}
+
+// ── 오픈으로 넘길 항목 고르기 ─────────────────────────
+function openCarryModal() {
+  const groups = FILL_SEQUENCE.filter(e => e.type === 'group' && CARRY_GROUP_IDS.includes(e.id));
+  document.getElementById('carry-picker').innerHTML = groups.map(g => `
+    <div class="carry-group">
+      <div class="carry-group-title">${g.label}</div>
+      <div class="carry-chips">
+        ${g.items.map(it => `<div class="carry-chip" data-id="${it.id}" data-label="${it.label}" data-group="${g.label}">${it.label}</div>`).join('')}
+      </div>
+    </div>`).join('');
+
+  document.querySelectorAll('#carry-picker .carry-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const id = chip.dataset.id;
+      if (carryPicked[id]) delete carryPicked[id];
+      else carryPicked[id] = { id: id, label: chip.dataset.label, group: chip.dataset.group };
+      chip.classList.toggle('on', !!carryPicked[id]);
+      updateCarryBtn();
+    });
+  });
+  updateCarryBtn();
+  document.getElementById('carry-modal').classList.add('show');
+}
+
+function updateCarryBtn() {
+  const n = Object.keys(carryPicked).length;
+  document.querySelector('.modal-go').textContent = n ? `${n}건 넘기고 완료` : '넘기고 완료';
+}
+
+function finishClosing(withCarry) {
+  document.getElementById('carry-modal').classList.remove('show');
+  const picked = withCarry ? Object.values(carryPicked) : [];
 
   showLoading(true, '완료 기록 중…');
 
-  // 완료를 누른 이 순간에만 서버에 딱 한 번 기록한다 (여러 명이 각자 눌러도
-  // 각각 새로 기록되는 것뿐이라 서로 겹치거나 충돌할 일이 없다).
+  // 완료를 누른 이 순간에만 서버에 딱 한 번 기록한다.
   postAction({ action: 'complete', date: TODAY.key });
+  if (picked.length) {
+    postAction({
+      action: 'carryover',
+      fromDate: TODAY.key,
+      targetDate: nextDayKey(TODAY.key),
+      items: picked,
+    });
+  }
 
   currentState.completed = true;
   currentState.completedAt = nowHHMM();
+  currentState.carried = picked;
   saveLocalState();
   renderState();
 
   setTimeout(() => {
     showLoading(false);
+    document.getElementById('done-title-text').textContent = '오늘 마감 완료!';
+    document.getElementById('done-sub').textContent =
+      `${TODAY.label} · ${currentState.completedAt} 완료` +
+      (picked.length ? ` · 내일 오픈으로 ${picked.length}건 넘김` : '');
     show('s-done');
   }, 400);
+}
+
+function nextDayKey(key) {
+  const d = new Date(key + 'T12:00:00');
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0, 10);
 }
 
 function onUndoClick() {
@@ -616,11 +895,24 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') checkBusinessDayRollover();
 });
 
+// ── 어제 마감에서 넘어온 항목 불러오기 ─────────────────
+function loadCarryover() {
+  jsonp({ action: 'carryover', date: TODAY.key })
+    .then(res => {
+      carriedItems = (res && res.items) || [];
+      renderCarryList();
+    })
+    .catch(() => { carriedItems = []; renderCarryList(); });
+}
+
 // ── 초기화 ────────────────────────────────────────────
 renderShell();
+setMode(MODE);
 renderState();
-if (currentState.completed) show('s-done');
+if (MODE === 'close' && currentState.completed) show('s-done');
+if (MODE === 'open' && openState.completed) show('s-done');
 loadMonthlyState();
+loadCarryover();
 setInterval(loadMonthlyState, 30000);
 </script>
 </body>

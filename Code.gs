@@ -23,6 +23,7 @@ const MONTHLY_ITEMS = [
 
 const DAY_SHEET_NAME = 'DayStatus';
 const MONTHLY_SHEET_NAME = 'MonthlyStatus';
+const CARRY_SHEET_NAME = 'Carryover';   // 마감 → 오픈 이월 항목
 const TIMEZONE = 'Asia/Seoul';
 
 // ===== 웹 진입점 =====
@@ -35,6 +36,8 @@ function doGet(e) {
   let result;
   if (action === 'monthly') {
     result = getMonthlyState(params.month);
+  } else if (action === 'carryover') {
+    result = getCarryover(params.date);
   } else {
     return HtmlService.createHtmlOutput(
       '<meta charset="utf-8"><body style="font-family:sans-serif;padding:40px;text-align:center;">' +
@@ -62,6 +65,10 @@ function doPost(e) {
   let result;
   if (data.action === 'complete') {
     result = recordCompletion(data.date);
+  } else if (data.action === 'completeOpen') {
+    result = recordOpenCompletion(data.date, data.carried);
+  } else if (data.action === 'carryover') {
+    result = saveCarryover(data.fromDate, data.targetDate, data.items);
   } else if (data.action === 'toggleMonthly') {
     result = toggleMonthly(data.month, data.itemId, data.checked);
   } else {
@@ -83,6 +90,20 @@ function getDaySheet_() {
   if (!sh) {
     sh = ss.insertSheet(DAY_SHEET_NAME);
     sh.appendRow(['날짜', '완료여부', '완료시각', '참여자']);
+  }
+  // 오픈/마감 구분 컬럼이 없으면 추가 (기존 시트 호환)
+  if (sh.getLastColumn() < 5) {
+    sh.getRange(1, 5).setValue('구분');
+  }
+  return sh;
+}
+
+function getCarrySheet_() {
+  const ss = getSs_();
+  let sh = ss.getSheetByName(CARRY_SHEET_NAME);
+  if (!sh) {
+    sh = ss.insertSheet(CARRY_SHEET_NAME);
+    sh.appendRow(['마감일', '오픈일', '항목ID', '항목명', '그룹', '기록시각']);
   }
   return sh;
 }
@@ -145,9 +166,50 @@ function recordCompletion(dateStr) {
     const date = dateStr || todayStr_();
     const now = Utilities.formatDate(new Date(), TIMEZONE, 'HH:mm');
     const daySh = getDaySheet_();
-    daySh.appendRow([date, true, now, '']);
+    daySh.appendRow([date, true, now, '', '마감']);
     return { ok: true, date: date, completedAt: now };
   });
+}
+
+// ===== 오픈 완료 기록 =====
+function recordOpenCompletion(dateStr, carriedLabels) {
+  return withLock_(function () {
+    const date = dateStr || todayStr_();
+    const now = Utilities.formatDate(new Date(), TIMEZONE, 'HH:mm');
+    const daySh = getDaySheet_();
+    daySh.appendRow([date, true, now, carriedLabels || '', '오픈']);
+    return { ok: true, date: date, completedAt: now };
+  });
+}
+
+// ===== 마감 → 오픈 이월 =====
+// 마감 때 재료 손질 등을 못 하면 다음 오픈으로 넘긴다.
+// 어떤 재료가 자주 밀리는지 쌓이면 발주·손질 시점을 조정하는 근거가 된다.
+function saveCarryover(fromDate, targetDate, items) {
+  return withLock_(function () {
+    if (!items || !items.length) return { ok: true, saved: 0 };
+    const sh = getCarrySheet_();
+    const now = Utilities.formatDate(new Date(), TIMEZONE, 'HH:mm');
+    const rows = items.map(function (it) {
+      return [fromDate || todayStr_(), targetDate || '', it.id || '', it.label || '', it.group || '', now];
+    });
+    sh.getRange(sh.getLastRow() + 1, 1, rows.length, 6).setValues(rows);
+    return { ok: true, saved: rows.length };
+  });
+}
+
+function getCarryover(dateStr) {
+  const date = dateStr || todayStr_();
+  const sh = getCarrySheet_();
+  const values = sh.getDataRange().getValues();
+  const items = [];
+  for (let i = 1; i < values.length; i++) {
+    const row = values[i];
+    if (rowDate_(row[1]) === date) {
+      items.push({ id: row[2], label: row[3], group: row[4] });
+    }
+  }
+  return { ok: true, date: date, items: items };
 }
 
 // ===== 월간 청소 데이터 (공유) =====
