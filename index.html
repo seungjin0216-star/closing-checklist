@@ -146,6 +146,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun 
 .modal-foot button{flex:1;padding:15px;border-radius:14px;border:none;font-size:15px;font-weight:600;cursor:pointer}
 .modal-skip{background:#f0f0f0;color:#636366}
 .modal-go{background:#1c1c1e;color:#fff}
+
+/* ── 최신화 버튼 (우측 상단 고정) ──────────────────────────
+   ⚠️ 2026-08-22 — 처음엔 화면 오른쪽 아래에 아주 작게 넣었더니
+      손가락으로 눌리지가 않았습니다. 위로 올리고 크게 키웠습니다.
+      버튼은 "보이는 것"보다 "눌리는 것"이 먼저입니다. */
+.refresh-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:12px;z-index:9999;
+  display:flex;align-items:center;gap:5px;padding:9px 13px;border-radius:20px;
+  background:rgba(255,255,255,.94);border:1.5px solid #e0e0e0;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;user-select:none;
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.refresh-btn:active{background:#f0f0f0;transform:scale(.94)}
+.rb-icon{font-size:14px;line-height:1}
+.rb-text{font-size:12px;font-weight:700;color:#636366;line-height:1}
+.rb-ver{font-size:9px;color:#c7c7cc;line-height:1;margin-top:2px}
 </style>
 </head>
 <body>
@@ -944,16 +958,18 @@ loadCarryover();
 setInterval(loadMonthlyState, 30000);
 </script>
 
-<!-- ⚠️ 버전 표시 — 지금 화면이 최신인지 눈으로 확인하는 용도.
-     화면을 고칠 때마다 아래 APP_VERSION 도 같이 올릴 것.
-     누르면 캐시를 비우고 강제로 새로 받습니다. -->
-<div id="app-version"
-     style="position:fixed;right:6px;bottom:calc(4px + env(safe-area-inset-bottom));z-index:9999;
-            font-size:10px;color:#cbd5e1;letter-spacing:.3px;user-select:none;cursor:pointer;">v2026-08-22a</div>
+
+<!-- 최신화 버튼 — 누르면 캐시를 비우고 새로 받습니다.
+     화면 파일을 고칠 때마다 아래 APP_VERSION 도 같이 올릴 것. -->
+<div class="refresh-btn" id="refresh-btn">
+  <span class="rb-icon">🔄</span>
+  <span><span class="rb-text">최신화</span><br><span class="rb-ver">v2026-08-22a</span></span>
+</div>
 <script>
 const APP_VERSION = '2026-08-22a';
-document.getElementById('app-version').addEventListener('click', function () {
-  if (!confirm('최신 화면으로 다시 받아올까요?\n(v' + APP_VERSION + ')')) return;
+document.getElementById('refresh-btn').addEventListener('click', function () {
+  if (!confirm('최신 화면으로 다시 받아올까요?\n지금 버전 v' + APP_VERSION)) return;
+  // 주소 뒤에 시각을 붙이면 폰이 저장해둔 화면을 못 쓰고 새로 받는다
   location.replace(location.pathname + '?t=' + Date.now());
 });
 </script>
