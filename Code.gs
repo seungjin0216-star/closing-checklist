@@ -1,4 +1,16 @@
 /**
+ * 마감 체크리스트 - Google Apps Script 백엔드 (v5)
+ *
+ * ⚠️ 2026-09-08 — 원당본점이 붙었습니다. 배포는 하나만 씁니다.
+ *
+ *    화면이 branch 값을 보내면 그 지점 시트에 기록합니다.
+ *        보내지 않으면(또는 'baekseok')  →  DayStatus      (백석. 기존 그대로)
+ *        branch=wondang               →  DayStatus_원당
+ *
+ *    ⚠️ 백석 경로는 한 글자도 안 바꿨습니다. branch 가 없으면 v4 와 똑같이 돕니다.
+ *       백석 마감은 매일 돌아가는 실전이라 건드리면 안 됩니다.
+ *
+ * (아래는 v4 설명)
  * 백석직영점 마감 체크리스트 - Google Apps Script 백엔드 (v4)
  * ------------------------------------------------------
  * v4부터는 "각자 폰 안에서만 체크"하는 방식으로 바뀌었습니다.
@@ -26,6 +38,20 @@ const MONTHLY_SHEET_NAME = 'MonthlyStatus';
 const CARRY_SHEET_NAME = 'Carryover';   // 마감 → 오픈 이월 항목
 const TIMEZONE = 'Asia/Seoul';
 
+// ⚠️ 지점별 시트 이름
+//    백석은 접미사가 없습니다. 예전에 쌓아둔 기록을 그대로 이어 쓰기 위해서입니다.
+//    이름을 바꾸면 지난 기록이 통째로 안 보이게 됩니다.
+const BRANCH_SUFFIX = {
+  baekseok: '',          // DayStatus       (기존)
+  wondang : '_원당',      // DayStatus_원당   (새로 생김)
+};
+
+function sheetName_(base, branch) {
+  var suffix = BRANCH_SUFFIX[String(branch || 'baekseok')];
+  if (suffix === undefined) suffix = '';   // 모르는 값이 오면 백석으로 (안전)
+  return base + suffix;
+}
+
 // ===== 웹 진입점 =====
 
 function doGet(e) {
@@ -35,9 +61,9 @@ function doGet(e) {
 
   let result;
   if (action === 'monthly') {
-    result = getMonthlyState(params.month);
+    result = getMonthlyState(params.month, params.branch);
   } else if (action === 'carryover') {
-    result = getCarryover(params.date);
+    result = getCarryover(params.date, params.branch);
   } else {
     return HtmlService.createHtmlOutput(
       '<meta charset="utf-8"><body style="font-family:sans-serif;padding:40px;text-align:center;">' +
@@ -64,13 +90,13 @@ function doPost(e) {
 
   let result;
   if (data.action === 'complete') {
-    result = recordCompletion(data.date);
+    result = recordCompletion(data.date, data.branch);
   } else if (data.action === 'completeOpen') {
-    result = recordOpenCompletion(data.date, data.carried);
+    result = recordOpenCompletion(data.date, data.carried, data.branch);
   } else if (data.action === 'carryover') {
-    result = saveCarryover(data.fromDate, data.targetDate, data.items);
+    result = saveCarryover(data.fromDate, data.targetDate, data.items, data.branch);
   } else if (data.action === 'toggleMonthly') {
-    result = toggleMonthly(data.month, data.itemId, data.checked);
+    result = toggleMonthly(data.month, data.itemId, data.checked, data.branch);
   } else {
     result = { ok: false, message: 'unknown action' };
   }
@@ -84,11 +110,12 @@ function getSs_() {
   return SpreadsheetApp.getActiveSpreadsheet();
 }
 
-function getDaySheet_() {
+function getDaySheet_(branch) {
   const ss = getSs_();
-  let sh = ss.getSheetByName(DAY_SHEET_NAME);
+  const name = sheetName_(DAY_SHEET_NAME, branch);
+  let sh = ss.getSheetByName(name);
   if (!sh) {
-    sh = ss.insertSheet(DAY_SHEET_NAME);
+    sh = ss.insertSheet(name);
     sh.appendRow(['날짜', '완료여부', '완료시각', '참여자']);
   }
   // 오픈/마감 구분 컬럼이 없으면 추가 (기존 시트 호환)
@@ -98,21 +125,23 @@ function getDaySheet_() {
   return sh;
 }
 
-function getCarrySheet_() {
+function getCarrySheet_(branch) {
   const ss = getSs_();
-  let sh = ss.getSheetByName(CARRY_SHEET_NAME);
+  const name = sheetName_(CARRY_SHEET_NAME, branch);
+  let sh = ss.getSheetByName(name);
   if (!sh) {
-    sh = ss.insertSheet(CARRY_SHEET_NAME);
+    sh = ss.insertSheet(name);
     sh.appendRow(['마감일', '오픈일', '항목ID', '항목명', '그룹', '기록시각']);
   }
   return sh;
 }
 
-function getMonthlySheet_() {
+function getMonthlySheet_(branch) {
   const ss = getSs_();
-  let sh = ss.getSheetByName(MONTHLY_SHEET_NAME);
+  const name = sheetName_(MONTHLY_SHEET_NAME, branch);
+  let sh = ss.getSheetByName(name);
   if (!sh) {
-    sh = ss.insertSheet(MONTHLY_SHEET_NAME);
+    sh = ss.insertSheet(name);
     sh.appendRow(['년월', '항목ID', '항목명', '체크여부', '완료일', '완료시각']);
   }
   return sh;
@@ -161,22 +190,22 @@ function withLock_(fn) {
 // ===== 완료 기록 (개별) =====
 // 체크 자체는 폰 안에서만 처리되고, "완료하기"를 누른 순간에만 한 번 호출된다.
 // 여러 명이 각자 완료해도 그냥 각각 새 줄로 쌓인다 (덮어쓰기/충돌 없음).
-function recordCompletion(dateStr) {
+function recordCompletion(dateStr, branch) {
   return withLock_(function () {
     const date = dateStr || todayStr_();
     const now = Utilities.formatDate(new Date(), TIMEZONE, 'HH:mm');
-    const daySh = getDaySheet_();
+    const daySh = getDaySheet_(branch);
     daySh.appendRow([date, true, now, '', '마감']);
     return { ok: true, date: date, completedAt: now };
   });
 }
 
 // ===== 오픈 완료 기록 =====
-function recordOpenCompletion(dateStr, carriedLabels) {
+function recordOpenCompletion(dateStr, carriedLabels, branch) {
   return withLock_(function () {
     const date = dateStr || todayStr_();
     const now = Utilities.formatDate(new Date(), TIMEZONE, 'HH:mm');
-    const daySh = getDaySheet_();
+    const daySh = getDaySheet_(branch);
     daySh.appendRow([date, true, now, carriedLabels || '', '오픈']);
     return { ok: true, date: date, completedAt: now };
   });
@@ -185,10 +214,10 @@ function recordOpenCompletion(dateStr, carriedLabels) {
 // ===== 마감 → 오픈 이월 =====
 // 마감 때 재료 손질 등을 못 하면 다음 오픈으로 넘긴다.
 // 어떤 재료가 자주 밀리는지 쌓이면 발주·손질 시점을 조정하는 근거가 된다.
-function saveCarryover(fromDate, targetDate, items) {
+function saveCarryover(fromDate, targetDate, items, branch) {
   return withLock_(function () {
     if (!items || !items.length) return { ok: true, saved: 0 };
-    const sh = getCarrySheet_();
+    const sh = getCarrySheet_(branch);
     const now = Utilities.formatDate(new Date(), TIMEZONE, 'HH:mm');
     const rows = items.map(function (it) {
       return [fromDate || todayStr_(), targetDate || '', it.id || '', it.label || '', it.group || '', now];
@@ -198,9 +227,9 @@ function saveCarryover(fromDate, targetDate, items) {
   });
 }
 
-function getCarryover(dateStr) {
+function getCarryover(dateStr, branch) {
   const date = dateStr || todayStr_();
-  const sh = getCarrySheet_();
+  const sh = getCarrySheet_(branch);
   const values = sh.getDataRange().getValues();
   const items = [];
   for (let i = 1; i < values.length; i++) {
@@ -214,9 +243,9 @@ function getCarryover(dateStr) {
 
 // ===== 월간 청소 데이터 (공유) =====
 
-function getMonthlyState(monthStr) {
+function getMonthlyState(monthStr, branch) {
   const m = monthStr || monthStr_();
-  const sh = getMonthlySheet_();
+  const sh = getMonthlySheet_(branch);
   const values = sh.getDataRange().getValues();
   const checks = {};
   for (let i = 1; i < values.length; i++) {
@@ -232,10 +261,10 @@ function getMonthlyState(monthStr) {
   return { ok: true, month: m, checks: checks };
 }
 
-function toggleMonthly(monthStr, itemId, checked) {
+function toggleMonthly(monthStr, itemId, checked, branch) {
   return withLock_(function () {
     const m = monthStr || monthStr_();
-    const sh = getMonthlySheet_();
+    const sh = getMonthlySheet_(branch);
     const values = sh.getDataRange().getValues();
     let targetRow = -1;
     let itemLabel = '';

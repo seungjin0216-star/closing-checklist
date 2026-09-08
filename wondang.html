@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>원당본점 마감체크리스트</title>
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="원당 마감">
+
+<!-- ⚠️ 캐시 금지 — 2026-08-22 추가
+     홈화면에 추가한 앱은 옛 화면을 아주 오래 붙들고 있습니다.
+     그래서 코드를 고쳐 올려도 폰에는 옛 화면이 계속 떴습니다. -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow-x:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:#f5f5f7;min-height:100vh}
+.screen{display:none}.screen.active{display:block}
+.container{width:100%;max-width:500px;margin:0 auto;padding:24px 20px 140px}
+
+/* 헤더 */
+.brand{font-size:24px;font-weight:700;color:#1c1c1e;margin-bottom:6px}
+.brand-loc{display:inline-block;background:#ede9fe;color:#5b21b6;font-size:13px;font-weight:600;padding:4px 12px;border-radius:20px;margin-bottom:16px}
+.date-pill{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid #e0e0e0;border-radius:12px;padding:12px 16px;margin-bottom:22px}
+.dp-label{font-size:12px;color:#8e8e93}
+.dp-val{font-size:16px;font-weight:700;color:#1c1c1e}
+.dp-note{font-size:12px;color:#8e8e93;margin-left:auto}
+
+/* 섹션 */
+.sec-title{font-size:12px;font-weight:700;color:#8e8e93;letter-spacing:.04em;margin:26px 0 10px;padding-bottom:7px;border-bottom:1.5px solid #e0e0e0;display:flex;justify-content:space-between}
+.sec-title.extra{color:#b45309}
+.sec-title.monthly{color:#0369a1}
+.sec-note{font-size:11px;color:#a1a1aa;font-weight:500;margin:-4px 0 10px}
+
+/* 태스크 로우 (체크 대상 항목) */
+.task-row{display:flex;align-items:center;gap:14px;padding:16px 16px;border-radius:14px;background:#fff;border:1.5px solid #e0e0e0;margin-bottom:10px;cursor:pointer;transition:all .12s;user-select:none}
+.task-row:active{transform:scale(.98)}
+.task-check{width:26px;height:26px;border-radius:50%;border:2px solid #d1d1d6;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;transition:all .12s}
+.task-check.gchecked{background:#7c3aed;border-color:#7c3aed}
+.task-body{flex:1;min-width:0}
+.task-label{font-size:15px;font-weight:600;color:#1c1c1e;line-height:1.4}
+.task-meta{font-size:12px;color:#8e8e93;margin-top:3px;display:none}
+
+.task-row.checked{border-color:#7c3aed;background:#faf5ff}
+.task-row.checked .task-check{background:#7c3aed;border-color:#7c3aed}
+.task-row.checked .task-meta{display:block}
+
+.task-row.extra.checked{border-color:#d97706;background:#fffbeb}
+.task-row.extra.checked .task-check{background:#d97706;border-color:#d97706}
+
+.task-row.weekly{border-style:dashed;border-color:#a1a1aa}
+.task-row.weekly.checked{border-style:solid;border-color:#7c3aed;background:#faf5ff}
+
+.task-row.locked{opacity:.7;pointer-events:none}
+
+/* 월간 청소 */
+.task-row.monthly{border-color:#bae6fd;background:#f0f9ff}
+.task-row.monthly .task-check{border-color:#7dd3fc}
+.task-row.monthly.checked{border-color:#0284c7;background:#f0f9ff}
+.task-row.monthly.checked .task-check{background:#0284c7;border-color:#0284c7}
+.task-row.monthly.urgent{border-color:#dc2626;background:#fef2f2}
+.task-row.monthly.urgent .task-check{border-color:#f87171}
+.task-row.monthly .task-tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;margin-top:4px;background:#e0f2fe;color:#0369a1}
+.task-row.monthly.urgent .task-tag{background:#fee2e2;color:#b91c1c}
+.task-row.monthly.checked .task-tag{background:#dcfce7;color:#15803d}
+
+/* 그룹(아코디언) */
+.group-card{background:#fff;border:1.5px solid #e0e0e0;border-radius:14px;margin-bottom:10px;overflow:hidden;transition:all .12s}
+.group-card.done{border-color:#7c3aed;background:#faf5ff}
+.group-card.locked{opacity:.7;pointer-events:none}
+.group-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px}
+.group-check-wrap{display:flex;align-items:center;gap:12px;cursor:pointer;flex:1;min-width:0;padding:2px 0}
+.group-check-wrap:active{opacity:.7}
+.group-title{font-size:15px;font-weight:600;color:#1c1c1e}
+.group-right{display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 4px 8px 10px;margin:-8px -4px -8px 0}
+.group-count{font-size:12px;font-weight:700;color:#8e8e93}
+.group-count.done{color:#7c3aed}
+.group-arrow{font-size:13px;color:#a1a1aa;transition:transform .15s}
+.group-body{display:none;padding:0 16px 14px 54px}
+.group-body.open{display:block}
+.check-row{display:flex;gap:8px;flex-wrap:wrap}
+.check-chip{padding:8px 14px;border-radius:20px;font-size:13px;font-weight:600;border:1.5px solid #e0e0e0;background:#fff;color:#a1a1aa}
+.check-chip.on{background:#ede9fe;border-color:#7c3aed;color:#5b21b6}
+
+/* 진행률 */
+.progress-wrap{padding:14px 2px 6px;font-size:13px;color:#8e8e93;font-weight:600}
+.bar{height:8px;border-radius:6px;background:#e5e5ea;overflow:hidden;margin-top:8px}
+.bar-fill{height:100%;background:#7c3aed;width:0%;transition:width .25s ease}
+
+/* 하단 고정 버튼 */
+.bottom-bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e5e5ea;padding:12px 20px calc(14px + env(safe-area-inset-bottom));z-index:20}
+.bottom-bar .inner{max-width:500px;margin:0 auto}
+.submit-btn{width:100%;padding:17px;border-radius:16px;font-size:16px;font-weight:700;border:none;cursor:pointer;transition:all .15s;background:#d1d1d6;color:#8e8e93}
+.submit-btn.ready{background:#7c3aed;color:#fff}
+.submit-btn:active{opacity:.85}
+
+/* 완료 화면 */
+.done-wrap{padding:48px 0 24px;text-align:center}
+.done-icon{font-size:64px;margin-bottom:18px}
+.done-title{font-size:22px;font-weight:700;color:#1c1c1e;margin-bottom:8px}
+.done-sub{font-size:15px;color:#636366;line-height:1.6;margin-bottom:24px}
+.reset-btn{margin-top:16px;width:100%;padding:15px;border-radius:14px;background:#fff;border:1.5px solid #e0e0e0;font-size:15px;color:#636366;cursor:pointer}
+.undo-link{display:block;margin-top:18px;font-size:13px;color:#b45309;text-decoration:underline;cursor:pointer}
+
+/* 로딩 */
+.loading-ov{display:none;position:fixed;inset:0;background:rgba(255,255,255,.9);z-index:999;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.loading-ov.show{display:flex}
+.spinner{width:44px;height:44px;border:4px solid #e0e0e0;border-top-color:#7c3aed;border-radius:50%;animation:spin .8s linear infinite}
+.loading-text{font-size:15px;color:#636366}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── 오픈/마감 전환 ── */
+.mode-tabs{display:flex;gap:8px;margin:14px 0 4px}
+.mode-tab{flex:1;padding:12px 0;text-align:center;border-radius:14px;border:1.5px solid #e0e0e0;background:#fff;font-size:15px;font-weight:600;color:#8e8e93;cursor:pointer;transition:all .12s}
+.mode-tab.active{background:#1c1c1e;border-color:#1c1c1e;color:#fff}
+.mode-tab.open.active{background:#0284c7;border-color:#0284c7}
+
+/* ── 마감에서 넘어온 항목 ── */
+.sec-title.carry{color:#b45309}
+.task-row.carry{border-color:#fcd34d;background:#fffbeb}
+.task-row.carry .task-check{border-color:#fbbf24}
+.task-row.carry.checked{border-color:#f59e0b;background:#fffbeb}
+
+/* 음식물쓰레기 (원당) — 맨 위에서 눈에 확 띄어야 한다.
+   놓치면 사흘을 더 쌓아둬야 해서 일부러 붉게 했다. */
+.sec-title.trash{color:#be123c;margin-top:4px}
+.task-row.trash{border-color:#fda4af;background:#fff1f2}
+.task-row.trash .task-check{border-color:#fb7185}
+.task-row.trash .task-label{font-weight:700}
+.task-row.trash.checked{border-color:#e11d48;background:#fff1f2}
+.task-row.carry.checked .task-check{background:#f59e0b;border-color:#f59e0b}
+.carry-from{font-size:11px;color:#a16207;margin-top:2px}
+.carry-empty{padding:14px 16px;border-radius:14px;background:#f7f7f7;color:#8e8e93;font-size:13px;text-align:center}
+
+/* ── 이월 선택 모달 ── */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:998;align-items:flex-end;justify-content:center}
+.modal-ov.show{display:flex}
+.modal-box{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:86vh;display:flex;flex-direction:column}
+.modal-head{padding:18px 20px 12px;border-bottom:1px solid #f0f0f0}
+.modal-title{font-size:17px;font-weight:700;color:#1c1c1e}
+.modal-sub{font-size:13px;color:#8e8e93;margin-top:5px;line-height:1.5}
+.modal-body{overflow-y:auto;padding:12px 16px;flex:1}
+.carry-group{margin-bottom:14px}
+.carry-group-title{font-size:12px;font-weight:700;color:#636366;margin-bottom:7px;padding-left:2px}
+.carry-chips{display:flex;flex-wrap:wrap;gap:7px}
+.carry-chip{padding:9px 13px;border-radius:11px;border:1.5px solid #e0e0e0;background:#fff;font-size:14px;color:#3a3a3c;cursor:pointer;transition:all .1s}
+.carry-chip.on{background:#fffbeb;border-color:#f59e0b;color:#b45309;font-weight:600}
+.modal-foot{padding:12px 16px 20px;border-top:1px solid #f0f0f0;display:flex;gap:8px}
+.modal-foot button{flex:1;padding:15px;border-radius:14px;border:none;font-size:15px;font-weight:600;cursor:pointer}
+.modal-skip{background:#f0f0f0;color:#636366}
+.modal-go{background:#1c1c1e;color:#fff}
+
+/* ── 최신화 버튼 (우측 상단 고정) ──────────────────────────
+   ⚠️ 2026-08-22 — 처음엔 화면 오른쪽 아래에 아주 작게 넣었더니
+      손가락으로 눌리지가 않았습니다. 위로 올리고 크게 키웠습니다.
+      버튼은 "보이는 것"보다 "눌리는 것"이 먼저입니다. */
+.refresh-btn{position:fixed;top:calc(10px + env(safe-area-inset-top));right:12px;z-index:9999;
+  display:flex;align-items:center;gap:5px;padding:9px 13px;border-radius:20px;
+  background:rgba(255,255,255,.94);border:1.5px solid #e0e0e0;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;user-select:none;
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.refresh-btn:active{background:#f0f0f0;transform:scale(.94)}
+.rb-icon{font-size:14px;line-height:1}
+.rb-text{font-size:12px;font-weight:700;color:#636366;line-height:1}
+.rb-ver{font-size:9px;color:#c7c7cc;line-height:1;margin-top:2px}
+</style>
+</head>
+<body>
+
+<!-- 메인 체크리스트 화면 -->
+<div class="screen active" id="s-main">
+  <div class="container">
+    <div class="brand">🍽 장수한우곱창</div>
+    <div class="brand-loc">🟢 원당본점 · 장수 매뉴얼</div>
+
+    <div class="mode-tabs">
+      <div class="mode-tab open" id="tab-open" onclick="setMode('open')">🌅 오픈</div>
+      <div class="mode-tab active" id="tab-close" onclick="setMode('close')">🌙 마감</div>
+    </div>
+
+    <div class="date-pill">
+      <span class="dp-label">오늘</span>
+      <span class="dp-val" id="date-val"></span>
+      <span class="dp-note" id="sync-note"></span>
+    </div>
+
+    <!-- ── 오픈 ── -->
+    <div id="mode-open" style="display:none">
+      <div class="sec-title">🌅 오픈 준비</div>
+      <div id="openList"></div>
+
+      <div class="sec-title carry">🔁 마감에서 넘어온 것</div>
+      <div class="sec-note">어제 마감 때 못 하고 넘긴 항목입니다.</div>
+      <div id="carryList"></div>
+    </div>
+
+    <!-- ── 마감 ── -->
+    <div id="mode-close">
+      <!-- ⚠️ 2026-09-08 원당 전용 — 월·수·금 아침에 수거해 갑니다.
+           그래서 일·화·목 마감 때 내놔야 합니다. 놓치면 사흘을 더 쌓아둬야 해서
+           맨 위에 크게 띄웁니다. 해당 요일이 아니면 아예 안 보입니다. -->
+      <div class="sec-title trash" id="trashTitle" style="display:none">🗑️ 오늘 꼭 — 음식물쓰레기</div>
+      <div class="sec-note" id="trashNote" style="display:none">내일 아침에 수거해 갑니다. 자정 전에 꼭 내놔주세요.</div>
+      <div id="trashList"></div>
+
+      <div class="sec-title">✅ 필수 마감 · 채우기</div>
+      <div id="fillList"></div>
+
+      <div class="sec-title">🧹 청소</div>
+      <div id="cleanList"></div>
+
+      <div class="sec-title" id="weeklyTitle" style="display:none">🗓️ 정기 청소 (이번주)</div>
+      <div id="weeklyList"></div>
+
+      <div class="sec-title extra">🔒 마지막 확인</div>
+      <div id="finalList"></div>
+
+      <div class="sec-title monthly">📅 월간 청소 (한 달에 한 번)</div>
+      <div class="sec-note">체크 안 해도 오늘 마감은 완료할 수 있어요. 이번 달에 한 번만 하면 됩니다.</div>
+      <div id="monthlyList"></div>
+    </div>
+
+    <div class="progress-wrap">
+      전체 진행률 <span id="progressText">0/0</span>
+      <div class="bar"><div class="bar-fill" id="progressBar"></div></div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <div class="inner">
+      <button class="submit-btn" id="completeBtn">전부 체크하면 완료할 수 있어요</button>
+    </div>
+  </div>
+</div>
+
+<!-- 마감 완료 직전: 오픈으로 넘길 항목 고르기 -->
+<div class="modal-ov" id="carry-modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="modal-title">오픈 때 해야 할 일이 있나요?</div>
+      <div class="modal-sub">재료가 없거나 시간이 없어 못 한 것을 골라주세요.<br><b id="carry-target-day">다음 영업일</b> 오픈 화면에 표시됩니다. 없으면 그냥 넘어가시면 됩니다.</div>
+    </div>
+    <div class="modal-body" id="carry-picker"></div>
+    <div class="modal-foot">
+      <button class="modal-skip" onclick="finishClosing(false)">없어요</button>
+      <button class="modal-go" onclick="finishClosing(true)">넘기고 완료</button>
+    </div>
+  </div>
+</div>
+
+<!-- 완료 화면 -->
+<div class="screen" id="s-done">
+  <div class="container">
+    <div class="done-wrap">
+      <div class="done-icon">✅</div>
+      <div class="done-title" id="done-title-text">오늘 마감 완료!</div>
+      <div class="done-sub" id="done-sub"></div>
+      <button class="reset-btn" onclick="backToMain()">← 체크리스트 보기</button>
+      <div class="undo-link" id="undoLink">실수했어요 — 완료 취소하기</div>
+    </div>
+  </div>
+</div>
+
+<!-- 로딩 -->
+<div class="loading-ov" id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">저장 중…</div>
+</div>
+
+<script>
+// ── 설정 ──────────────────────────────────────────────
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxeauYyGzxWMcPSrpHAidBAnYMuIZW3XqmGg1gTomZfuM7vdmfJl2y-VG1Hk72ohFhTZg/exec';
+
+// ⚠️ 2026-09-08 — 서버는 백석과 같은 배포를 씁니다. 이 값으로 지점을 가릅니다.
+//    보내지 않으면 서버가 백석으로 봅니다. 그러면 원당 기록이 백석 시트에 섞입니다.
+//    시트: DayStatus_원당 · Carryover_원당 · MonthlyStatus_원당
+const BRANCH = 'wondang';
+
+// ── 체크리스트 항목 (Code.gs와 동일하게 유지) ──────────
+// 아코디언(그룹) 항목을 먼저, 낱개 항목을 뒤에 배치
+const FILL_SEQUENCE = [
+  { type: 'group', id: 'g_sauce', label: '소스류', items: [
+    { id: 'gs1', label: '국수소스' },
+    { id: 'gs2', label: '파장소스' },
+    { id: 'gs3', label: '들기름' },
+  ]},
+  { type: 'item', id: 'f_saltjang', label: '소금장 채우기' },
+  { type: 'group', id: 'g_left', label: '찬냉장고 하단[좌측]', items: [
+    { id: 'gl1', label: '라면용대파' },
+    { id: 'gl2', label: '다진고추' },
+    { id: 'gl3', label: '다진대파' },
+    { id: 'gl4', label: '전골용배추' },
+    { id: 'gl5', label: '전골용대파' },
+    { id: 'gl6', label: '단무지' },
+    { id: 'gl7', label: '다대기' },
+    { id: 'gl8', label: '다진마늘' },
+    { id: 'gl9', label: '묵은지' },
+    { id: 'gl10', label: '미나리' },
+  ]},
+  { type: 'group', id: 'g_right', label: '찬냉장고 하단[우측]', items: [
+    { id: 'gr1', label: '천엽' },
+    { id: 'gr2', label: '대파김치' },
+    { id: 'gr3', label: '볶음밥김치' },
+    { id: 'gr4', label: '깍두기' },
+    { id: 'gr5', label: '양파소스' },
+  ]},
+  // ⚠️ 2026-09-08 원당 — 백석은 「6구냉장고」 하나였는데 원당은 냉동고·냉장고가 따로입니다.
+  { type: 'group', id: 'g_six', label: '6구냉동고', items: [
+    { id: 'g6_1', label: '전골용 내장' },
+    { id: 'g6_2', label: '전골용 고추' },
+    { id: 'g6_3', label: '메밀면' },
+    { id: 'g6_4', label: '우동사리' },
+  ]},
+  { type: 'group', id: 'g_sixc', label: '6구냉장고', items: [
+    { id: 'g6c_1', label: '콩나물' },
+    { id: 'g6c_2', label: '삶은 콩나물' },
+  ]},
+  { type: 'group', id: 'g_meat', label: '고기냉장고', items: [
+    { id: 'gm1', label: '고기정리' },
+    { id: 'gm3', label: '떡' },
+  ]},
+  { type: 'item', id: 'f_banchan', label: '찬냉장고 반찬리필' },
+  { type: 'item', id: 'f_pajang', label: '파장 만들기' },
+  { type: 'item', id: 'f_powder', label: '고춧가루·다시다 채우고 뚜껑 닫기' },
+  { type: 'item', id: 'f_fireshow', label: '불쇼술 채우기' },
+  { type: 'item', id: 'f_drink', label: '술, 음료 채우기' },
+  { type: 'item', id: 'f_grape', label: '청포도, 이쑤시개 채우기' },
+  { type: 'item', id: 'f_broth', label: '육수 확인' },
+  { type: 'item', id: 'f_gammi', label: '감미 채우기' },
+  { type: 'item', id: 'f_tissue', label: '테이블티슈 채우기' },
+];
+
+// ── 오픈 항목 ──────────────────────────────────────────
+const OPEN_ITEMS = [
+  { id: 'o1', label: '밥하기' },
+  { id: 'o2', label: '육수 확인' },
+  { id: 'o3', label: '고기 확인' },
+  { id: 'o4', label: '홀테이블·데크바닥 정리' },
+  { id: 'o5', label: '예약 확인' },
+  { id: 'o6', label: '테이블 닦기' },
+];
+
+// 마감 때 못 하면 오픈으로 넘길 수 있는 그룹 (재료 손질이 대부분 여기서 나온다)
+const CARRY_GROUP_IDS = ['g_left', 'g_right', 'g_six', 'g_sixc', 'g_meat'];
+
+const CLEAN_ITEMS = [
+  { id: 'c0', label: '테이블 다시 닦기' },
+  { id: 'c1', label: '쓴 행주 전부 삶기 (테이블행주 포함)' },
+  { id: 'c2', label: '술박스 정리하기' },
+  { id: 'c3', label: '화구 라인 청소' },
+  { id: 'c4', label: '식기세척기 끄고 청소' },
+  { id: 'c5', label: '쓰레기(분리수거) 비우기' },
+  { id: 'c6', label: '홀 일반쓰레기 → 창고 쓰레기통에 버리기' },
+];
+
+const WEEKLY_ITEMS = [
+  { id: 'w1', label: '덕트 청소', weekday: 1 }, // 1 = 월요일
+];
+
+// ── 음식물쓰레기 (원당 전용) ────────────────────────────
+//
+//  월·수·금 아침에 수거해 갑니다. 그러니 그 전날 밤에 내놔야 합니다.
+//      일요일 마감 → 월요일 아침 수거
+//      화요일 마감 → 수요일 아침 수거
+//      목요일 마감 → 금요일 아침 수거
+//
+//  ⚠️ 자정을 넘겨도 괜찮습니다. 이 앱은 오전 8시 전까지를 「전날 마감」으로 보기 때문에,
+//     일요일 밤 11시든 월요일 새벽 1시든 똑같이 「일요일」로 잡힙니다.
+//
+//  ⚠️ 수거 요일이 바뀌면 아래 숫자만 고치세요. (0=일 1=월 2=화 3=수 4=목 5=금 6=토)
+//  ⚠️ IS_TRASH_DAY 는 TODAY 가 만들어진 뒤에 계산합니다. 아래쪽을 보세요.
+//     여기서 계산하면 TODAY 가 아직 없어서 화면이 통째로 안 뜹니다. (2026-09-08 실수)
+const TRASH_DOWS = [0, 2, 4];              // 내놓는 날 = 일·화·목
+const TRASH_ITEMS = [
+  { id: 't1', label: '음식물쓰레기 버리기' },
+];
+
+const MONTHLY_ITEMS = [
+  { id: 'm1', label: '냉장고 성에제거 및 청소' },
+  { id: 'm2', label: '주방바닥 퐁퐁청소' },
+  { id: 'm3', label: '유리 청소' },
+];
+
+const FINAL_ITEMS = [
+  { id: 'x1', label: '고기·식자재 발주 무조건 하기' },
+  { id: 'x2', label: '저녁 먹을 거 확인 후 주문' },
+  { id: 'x3', label: '에어컨 끄기 (홀3, 주방1)' },
+  { id: 'x4', label: '가스 끄기' },
+  { id: 'x5', label: '마감정산·시재 맞추기' },
+];
+
+function flattenFillItems() {
+  const out = [];
+  FILL_SEQUENCE.forEach(entry => {
+    if (entry.type === 'group') entry.items.forEach(it => out.push(it));
+    else out.push({ id: entry.id, label: entry.label });
+  });
+  return out;
+}
+
+// ── 날짜 (KST 기준) ─────────────────────────────────────
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+function todayInfo() {
+  const kstStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' });
+  const d = new Date(kstStr);
+  // [영업일 기준] 오전 8시 이전이면 아직 "전날 마감"이 진행 중인 것으로 간주한다.
+  // 예: 월요일 마감을 자정 넘어 화요일 새벽에 체크해도 계속 월요일 마감으로 유지되고,
+  // 화요일 오전 8시가 되어야 새 날짜(화요일)의 빈 체크리스트로 넘어간다.
+  if (d.getHours() < 8) {
+    d.setDate(d.getDate() - 1);
+  }
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return {
+    key: `${y}-${m}-${day}`,
+    monthKey: `${y}-${m}`,
+    label: `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAYS[d.getDay()]})`,
+    dow: d.getDay(),
+    day: d.getDate(),
+    daysInMonth: new Date(y, d.getMonth() + 1, 0).getDate(),
+  };
+}
+const TODAY = todayInfo();
+const IS_MONDAY = TODAY.dow === 1;
+const IS_TRASH_DAY = TRASH_DOWS.indexOf(TODAY.dow) >= 0;   // 음식물쓰레기 내놓는 날인가
+const DAYS_LEFT_IN_MONTH = TODAY.daysInMonth - TODAY.day;
+
+const REQUIRED_ITEMS = flattenFillItems()
+  .concat(CLEAN_ITEMS)
+  .concat(IS_MONDAY ? WEEKLY_ITEMS : [])
+  .concat(IS_TRASH_DAY ? TRASH_ITEMS : [])   // 버리는 날에만 필수
+  .concat(FINAL_ITEMS);
+
+// 어제 마감의 영업일 키 (오늘 오픈이 이어받을 이월 항목을 찾을 때 쓴다)
+function prevDayKey(key) {
+  const d = new Date(key + 'T12:00:00');
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
+// 오픈 / 마감 중 어느 화면을 먼저 보여줄지
+// 아침 8시 ~ 오후 4시는 오픈, 그 외는 마감
+function defaultMode() {
+  const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+  const h = d.getHours();
+  return (h >= 8 && h < 16) ? 'open' : 'close';
+}
+let MODE = defaultMode();
+
+// v4: 체크 상태는 이제 서버와 공유하지 않고 이 폰(브라우저) 안에서만 관리한다.
+// 새로고침해도 오늘 하루 동안은 유지되도록 localStorage에 저장해둔다.
+// ⚠️ 2026-09-08 — 이름 앞에 지점을 붙입니다.
+//    백석과 같은 주소(도메인)에 있어서, 이름이 같으면 한 폰에서 둘 다 열었을 때
+//    체크가 서로 섞입니다. 사장님은 두 지점을 다 보시니 반드시 갈라야 합니다.
+const LOCAL_KEY = 'closingChecklist_wondang_' + TODAY.key;
+function loadLocalState() {
+  try {
+    const raw = localStorage.getItem(LOCAL_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return { checks: {}, completed: false, completedAt: '' };
+}
+function saveLocalState() {
+  try {
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(currentState));
+  } catch (e) {}
+}
+
+let currentState = loadLocalState();
+let monthlyState = { checks: {} };
+let openGroups = {};
+
+// ── 오픈 상태 (마감과 따로 저장) ──────────────────────
+const OPEN_KEY = 'openChecklist_wondang_' + TODAY.key;
+function loadOpenState() {
+  try {
+    const raw = localStorage.getItem(OPEN_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return { checks: {}, completed: false, completedAt: '' };
+}
+function saveOpenState() {
+  try { localStorage.setItem(OPEN_KEY, JSON.stringify(openState)); } catch (e) {}
+}
+let openState = loadOpenState();
+let carriedItems = [];   // 어제 마감에서 넘어온 항목 [{id,label,group}]
+let carryPicked = {};    // 마감 완료 직전 모달에서 고른 항목
+
+// ── 화면 전환 ─────────────────────────────────────────
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+function backToMain() { show('s-main'); }
+function showLoading(v, text) {
+  document.getElementById('loading-text').textContent = text || '저장 중…';
+  document.getElementById('loading').classList[v ? 'add' : 'remove']('show');
+}
+
+// ── JSONP GET ────────────────────────────────────────────
+function jsonp(params) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+    const timeout = setTimeout(() => { cleanup(); reject(new Error('timeout')); }, 10000);
+    function cleanup() {
+      clearTimeout(timeout);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+    window[cbName] = function (data) { cleanup(); resolve(data); };
+    params = Object.assign({}, params, { branch: BRANCH });   // 지점 표식
+    const qs = Object.keys(params).map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k])).join('&');
+    const script = document.createElement('script');
+    script.src = GAS_URL + '?' + qs + '&callback=' + cbName;
+    script.onerror = () => { cleanup(); reject(new Error('jsonp load error')); };
+    document.body.appendChild(script);
+  });
+}
+
+// ── POST (fire-and-forget) ──────────────────────────────
+function postAction(payload) {
+  return fetch(GAS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(Object.assign({}, payload, { branch: BRANCH })),   // 지점 표식
+  });
+}
+
+// ── 렌더링 ────────────────────────────────────────────
+function taskRowHtml(item, extraClass) {
+  return `
+    <div class="task-row${extraClass ? ' ' + extraClass : ''}" id="row-${item.id}" data-id="${item.id}">
+      <div class="task-check" id="chk-${item.id}"></div>
+      <div class="task-body">
+        <div class="task-label">${item.label}</div>
+        <div class="task-meta" id="meta-${item.id}"></div>
+      </div>
+    </div>`;
+}
+
+function groupCardHtml(group) {
+  return `
+    <div class="group-card" id="gcard-${group.id}">
+      <div class="group-head">
+        <div class="group-check-wrap" id="gcheck-wrap-${group.id}">
+          <div class="task-check" id="gcheck-${group.id}"></div>
+          <span class="group-title">${group.label}</span>
+        </div>
+        <span class="group-right" id="gright-${group.id}">
+          <span class="group-count" id="gcount-${group.id}">0/${group.items.length}</span>
+          <span class="group-arrow" id="garrow-${group.id}">▾</span>
+        </span>
+      </div>
+      <div class="group-body" id="gbody-${group.id}">
+        <div class="check-row">
+          ${group.items.map(it => `<div class="check-chip" id="chip-${it.id}" data-id="${it.id}">${it.label}</div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+function monthlyRowHtml(item) {
+  return `
+    <div class="task-row monthly" id="row-${item.id}" data-id="${item.id}">
+      <div class="task-check" id="chk-${item.id}"></div>
+      <div class="task-body">
+        <div class="task-label">${item.label}</div>
+        <div class="task-meta" id="meta-${item.id}"></div>
+      </div>
+    </div>`;
+}
+
+function renderShell() {
+  document.getElementById('date-val').textContent = TODAY.label;
+
+  document.getElementById('fillList').innerHTML = FILL_SEQUENCE.map(entry =>
+    entry.type === 'group' ? groupCardHtml(entry) : taskRowHtml(entry)
+  ).join('');
+
+  document.getElementById('cleanList').innerHTML = CLEAN_ITEMS.map(it => taskRowHtml(it)).join('');
+  document.getElementById('finalList').innerHTML = FINAL_ITEMS.map(it => taskRowHtml(it, 'extra')).join('');
+
+  if (IS_MONDAY) {
+    document.getElementById('weeklyTitle').style.display = '';
+    document.getElementById('weeklyList').innerHTML = WEEKLY_ITEMS.map(it => taskRowHtml(it, 'weekly')).join('');
+  }
+
+  // 음식물쓰레기 — 내놓는 날에만 보인다
+  if (IS_TRASH_DAY) {
+    document.getElementById('trashTitle').style.display = '';
+    document.getElementById('trashNote').style.display = '';
+    document.getElementById('trashList').innerHTML = TRASH_ITEMS.map(it => taskRowHtml(it, 'trash')).join('');
+  }
+
+  document.getElementById('monthlyList').innerHTML = MONTHLY_ITEMS.map(it => monthlyRowHtml(it)).join('');
+
+  // 이벤트 연결: 낱개 항목 (채우기 낱개 + 청소 + 정기청소 + 마지막확인)
+  FILL_SEQUENCE.filter(e => e.type === 'item').concat(CLEAN_ITEMS, WEEKLY_ITEMS, TRASH_ITEMS, FINAL_ITEMS).forEach(it => {
+    const el = document.getElementById('row-' + it.id);
+    if (el) el.addEventListener('click', () => onToggle(it));
+  });
+
+  // 이벤트 연결: 그룹 (헤더 체크 = 전체 일괄 체크/해제, 화살표 = 펼치기만)
+  FILL_SEQUENCE.filter(e => e.type === 'group').forEach(group => {
+    document.getElementById('gcheck-wrap-' + group.id).addEventListener('click', () => onToggleGroup(group));
+    document.getElementById('gright-' + group.id).addEventListener('click', () => {
+      openGroups[group.id] = !openGroups[group.id];
+      document.getElementById('gbody-' + group.id).classList.toggle('open', openGroups[group.id]);
+      document.getElementById('garrow-' + group.id).textContent = openGroups[group.id] ? '▴' : '▾';
+    });
+  });
+
+  // 이벤트 연결: 월간 항목
+  MONTHLY_ITEMS.forEach(it => {
+    const el = document.getElementById('row-' + it.id);
+    if (el) el.addEventListener('click', () => onToggleMonthly(it));
+  });
+
+  // 오픈 항목
+  document.getElementById('openList').innerHTML = OPEN_ITEMS.map(it => taskRowHtml(it)).join('');
+  OPEN_ITEMS.forEach(it => {
+    const el = document.getElementById('row-' + it.id);
+    if (el) el.addEventListener('click', () => onToggleOpen(it));
+  });
+
+  document.getElementById('completeBtn').addEventListener('click', onCompleteClick);
+  document.getElementById('undoLink').addEventListener('click', onUndoClick);
+}
+
+// ── 오픈/마감 전환 ────────────────────────────────────
+function setMode(mode) {
+  MODE = mode;
+  document.getElementById('tab-open').classList.toggle('active', mode === 'open');
+  document.getElementById('tab-close').classList.toggle('active', mode === 'close');
+  document.getElementById('mode-open').style.display = mode === 'open' ? '' : 'none';
+  document.getElementById('mode-close').style.display = mode === 'close' ? '' : 'none';
+  renderState();
+  window.scrollTo(0, 0);
+}
+
+// ── 오픈 렌더링 ───────────────────────────────────────
+function renderCarryList() {
+  const box = document.getElementById('carryList');
+  if (!carriedItems.length) {
+    box.innerHTML = '<div class="carry-empty">넘어온 항목이 없습니다 👍</div>';
+    return;
+  }
+  box.innerHTML = carriedItems.map(it => `
+    <div class="task-row carry" id="row-${it.id}" data-id="${it.id}">
+      <div class="task-check" id="chk-${it.id}"></div>
+      <div class="task-body">
+        <div class="task-label">${it.label}</div>
+        <div class="carry-from">${it.group || ''}</div>
+      </div>
+    </div>`).join('');
+
+  carriedItems.forEach(it => {
+    const el = document.getElementById('row-' + it.id);
+    if (el) el.addEventListener('click', () => onToggleOpen(it));
+  });
+  renderState();
+}
+
+function openRequiredItems() {
+  return OPEN_ITEMS.concat(carriedItems);
+}
+
+function onToggleOpen(item) {
+  if (openState.completed) return;
+  const c = openState.checks[item.id];
+  openState.checks[item.id] = { checked: !(c && c.checked), at: nowHHMM() };
+  saveOpenState();
+  renderState();
+}
+
+function renderState() {
+  if (MODE === 'open') return renderOpenState();
+  let checkedCount = 0;
+
+  REQUIRED_ITEMS.forEach(item => {
+    const c = currentState.checks[item.id];
+    const isChecked = !!(c && c.checked);
+    if (isChecked) checkedCount++;
+    applyItemVisual(item.id, isChecked, c);
+  });
+
+  // 그룹 카운트 뱃지 + 그룹 체크 표시
+  FILL_SEQUENCE.filter(e => e.type === 'group').forEach(group => {
+    const doneCount = group.items.filter(it => currentState.checks[it.id] && currentState.checks[it.id].checked).length;
+    const allDone = doneCount === group.items.length;
+    const badge = document.getElementById('gcount-' + group.id);
+    badge.textContent = `${doneCount}/${group.items.length}`;
+    badge.classList.toggle('done', allDone);
+    const gchk = document.getElementById('gcheck-' + group.id);
+    gchk.textContent = allDone ? '✓' : '';
+    gchk.classList.toggle('gchecked', allDone);
+    document.getElementById('gcard-' + group.id).classList.toggle('done', allDone);
+    document.getElementById('gcard-' + group.id).classList.toggle('locked', currentState.completed);
+  });
+
+  const total = REQUIRED_ITEMS.length;
+  document.getElementById('progressText').textContent = `${checkedCount}/${total}`;
+  document.getElementById('progressBar').style.width = total ? (checkedCount / total * 100) + '%' : '0%';
+
+  const btn = document.getElementById('completeBtn');
+  const ready = checkedCount === total;
+  btn.classList.toggle('ready', ready);
+  btn.textContent = ready ? '오늘 마감 완료하기' : `전부 체크하면 완료할 수 있어요 (${checkedCount}/${total})`;
+  btn.disabled = currentState.completed;
+
+  document.getElementById('sync-note').textContent = currentState.completed ? '✅ 완료됨' : '';
+
+  if (currentState.completed) {
+    document.getElementById('done-sub').textContent = `${TODAY.label} · ${currentState.completedAt || ''} 완료`;
+  }
+
+  // 잠금 처리 (완료된 날은 항목 수정 불가)
+  document.querySelectorAll('.task-row').forEach(el => {
+    el.classList.toggle('locked', currentState.completed && !el.classList.contains('monthly'));
+  });
+}
+
+function renderOpenState() {
+  const items = openRequiredItems();
+  let checked = 0;
+  items.forEach(item => {
+    const c = openState.checks[item.id];
+    const on = !!(c && c.checked);
+    if (on) checked++;
+    applyItemVisual(item.id, on, c);
+  });
+
+  const total = items.length;
+  document.getElementById('progressText').textContent = `${checked}/${total}`;
+  document.getElementById('progressBar').style.width = total ? (checked / total * 100) + '%' : '0%';
+
+  const btn = document.getElementById('completeBtn');
+  const ready = total > 0 && checked === total;
+  btn.classList.toggle('ready', ready);
+  btn.textContent = openState.completed ? '오픈 완료됨'
+    : ready ? '오픈 준비 완료하기' : `전부 체크하면 완료할 수 있어요 (${checked}/${total})`;
+  btn.disabled = openState.completed;
+  document.getElementById('sync-note').textContent = openState.completed ? '✅ 오픈 완료' : '';
+
+  document.querySelectorAll('#mode-open .task-row').forEach(el => {
+    el.classList.toggle('locked', openState.completed);
+  });
+}
+
+function applyItemVisual(id, isChecked, c) {
+  const row = document.getElementById('row-' + id);
+  const chip = document.getElementById('chip-' + id);
+  const chk = document.getElementById('chk-' + id);
+  const meta = document.getElementById('meta-' + id);
+  if (row) {
+    row.classList.toggle('checked', isChecked);
+    if (chk) chk.textContent = isChecked ? '✓' : '';
+    if (meta) meta.textContent = isChecked && c && c.at ? c.at : '';
+  }
+  if (chip) chip.classList.toggle('on', isChecked);
+}
+
+function renderMonthlyState() {
+  MONTHLY_ITEMS.forEach(item => {
+    const c = monthlyState.checks[item.id];
+    const isChecked = !!(c && c.checked);
+    const row = document.getElementById('row-' + item.id);
+    const chk = document.getElementById('chk-' + item.id);
+    const meta = document.getElementById('meta-' + item.id);
+    if (!row) return;
+    const urgent = !isChecked && DAYS_LEFT_IN_MONTH <= 6;
+    row.classList.toggle('checked', isChecked);
+    row.classList.toggle('urgent', urgent);
+    if (chk) chk.textContent = isChecked ? '✓' : '';
+    let tag = '';
+    if (isChecked) tag = `<span class="task-tag">이번 달 완료 · ${c.date ? c.date.slice(5).replace('-', '/') : ''}</span>`;
+    else if (urgent) tag = `<span class="task-tag">⚠️ 이번 달 마감 임박 (D-${DAYS_LEFT_IN_MONTH})</span>`;
+    if (meta) meta.innerHTML = tag;
+  });
+}
+
+// ── 월간청소만 서버와 공유 (한 달에 한 번이라 여러 명이 봐야 의미가 있음) ──
+let loadingMonthly = false;
+function loadMonthlyState() {
+  if (loadingMonthly) return;
+  loadingMonthly = true;
+  jsonp({ action: 'monthly', month: TODAY.monthKey })
+    .then(state => { monthlyState = state; renderMonthlyState(); })
+    .catch(() => {})
+    .finally(() => { loadingMonthly = false; });
+}
+
+function nowHHMM() {
+  const kstStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' });
+  const d = new Date(kstStr);
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
+// ── 이벤트 핸들러 (필수 마감 체크는 전부 이 폰 안에서만 처리, 서버 호출 없음) ──
+function onToggle(item) {
+  if (currentState.completed) return;
+  const c = currentState.checks[item.id];
+  const nextChecked = !(c && c.checked);
+
+  currentState.checks[item.id] = { checked: nextChecked, at: nowHHMM() };
+  saveLocalState();
+  renderState();
+}
+
+function onToggleGroup(group) {
+  if (currentState.completed) return;
+  const allChecked = group.items.every(it => currentState.checks[it.id] && currentState.checks[it.id].checked);
+  const nextChecked = !allChecked;
+  const at = nowHHMM();
+
+  group.items.forEach(it => {
+    currentState.checks[it.id] = { checked: nextChecked, at: at };
+  });
+  saveLocalState();
+  renderState();
+}
+
+function onToggleMonthly(item) {
+  const c = monthlyState.checks[item.id];
+  const nextChecked = !(c && c.checked);
+  monthlyState.checks[item.id] = { checked: nextChecked, date: TODAY.key, at: '...' };
+  renderMonthlyState();
+
+  postAction({ action: 'toggleMonthly', month: TODAY.monthKey, itemId: item.id, checked: nextChecked })
+    .then(() => setTimeout(loadMonthlyState, 700))
+    .catch(() => setTimeout(loadMonthlyState, 700));
+}
+
+function onCompleteClick() {
+  if (MODE === 'open') return onCompleteOpen();
+
+  if (currentState.completed) return;
+  const allChecked = REQUIRED_ITEMS.every(it => currentState.checks[it.id] && currentState.checks[it.id].checked);
+  if (!allChecked) return;
+
+  // 완료 직전에 "오픈으로 넘길 일"을 한 번 물어본다.
+  // 항목마다 버튼을 다는 대신 여기서 한 번에 고르게 해서 평소 체크를 방해하지 않는다.
+  carryPicked = {};
+  openCarryModal();
+}
+
+function onCompleteOpen() {
+  if (openState.completed) return;
+  const items = openRequiredItems();
+  if (!items.every(it => openState.checks[it.id] && openState.checks[it.id].checked)) return;
+  if (!confirm('오픈 준비를 완료 처리할까요?')) return;
+
+  showLoading(true, '완료 기록 중…');
+  postAction({
+    action: 'completeOpen',
+    date: TODAY.key,
+    carried: carriedItems.map(it => it.label).join(', '),
+  });
+
+  openState.completed = true;
+  openState.completedAt = nowHHMM();
+  saveOpenState();
+  renderState();
+
+  setTimeout(() => {
+    showLoading(false);
+    document.getElementById('done-title-text').textContent = '오픈 준비 완료!';
+    document.getElementById('done-sub').textContent = `${TODAY.label} · ${openState.completedAt} 완료`;
+    show('s-done');
+  }, 400);
+}
+
+// ── 오픈으로 넘길 항목 고르기 ─────────────────────────
+function openCarryModal() {
+  const groups = FILL_SEQUENCE.filter(e => e.type === 'group' && CARRY_GROUP_IDS.includes(e.id));
+  document.getElementById('carry-picker').innerHTML = groups.map(g => `
+    <div class="carry-group">
+      <div class="carry-group-title">${g.label}</div>
+      <div class="carry-chips">
+        ${g.items.map(it => `<div class="carry-chip" data-id="${it.id}" data-label="${it.label}" data-group="${g.label}">${it.label}</div>`).join('')}
+      </div>
+    </div>`).join('');
+
+  document.querySelectorAll('#carry-picker .carry-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const id = chip.dataset.id;
+      if (carryPicked[id]) delete carryPicked[id];
+      else carryPicked[id] = { id: id, label: chip.dataset.label, group: chip.dataset.group };
+      chip.classList.toggle('on', !!carryPicked[id]);
+      updateCarryBtn();
+    });
+  });
+  updateCarryBtn();
+  // 실제로 언제 뜨는지 보여준다. 화요일 휴무면 수요일이라고 정확히 말해야
+  // "내일 나오겠지" 하고 넘어가는 일이 없다.
+  var 목표 = nextDayKey(TODAY.key);
+  var dd = new Date(목표 + 'T12:00:00');
+  var 요일 = ['일','월','화','수','목','금','토'][dd.getDay()];
+  var el = document.getElementById('carry-target-day');
+  if (el) el.textContent = (dd.getMonth()+1) + '/' + dd.getDate() + '(' + 요일 + ')';
+
+  document.getElementById('carry-modal').classList.add('show');
+}
+
+function updateCarryBtn() {
+  const n = Object.keys(carryPicked).length;
+  document.querySelector('.modal-go').textContent = n ? `${n}건 넘기고 완료` : '넘기고 완료';
+}
+
+function finishClosing(withCarry) {
+  document.getElementById('carry-modal').classList.remove('show');
+  const picked = withCarry ? Object.values(carryPicked) : [];
+
+  showLoading(true, '완료 기록 중…');
+
+  // 완료를 누른 이 순간에만 서버에 딱 한 번 기록한다.
+  postAction({ action: 'complete', date: TODAY.key });
+  if (picked.length) {
+    postAction({
+      action: 'carryover',
+      fromDate: TODAY.key,
+      targetDate: nextDayKey(TODAY.key),
+      items: picked,
+    });
+  }
+
+  currentState.completed = true;
+  currentState.completedAt = nowHHMM();
+  currentState.carried = picked;
+  saveLocalState();
+  renderState();
+
+  setTimeout(() => {
+    showLoading(false);
+    document.getElementById('done-title-text').textContent = '오늘 마감 완료!';
+    document.getElementById('done-sub').textContent =
+      `${TODAY.label} · ${currentState.completedAt} 완료` +
+      (picked.length ? ` · 내일 오픈으로 ${picked.length}건 넘김` : '');
+    show('s-done');
+  }, 400);
+}
+
+// 다음 "영업일" — 휴무일은 건너뛴다
+//
+// ⚠️ 2026-08-22 발견
+//    예전에는 그냥 하루를 더했다. 그런데 우리 가게는 매주 화요일이 휴무다.
+//    월요일 마감에서 미룬 항목이 화요일 앞으로 저장됐고,
+//    화요일엔 아무도 앱을 안 켜니 그대로 묻혔다.
+//    수요일 오픈 화면은 수요일 날짜로만 찾으므로 영영 안 보였다.
+//    "미뤘으니 됐다" 고 넘어갔는데 실제로는 아무도 못 보는 상태였다.
+//
+//    달력상의 다음 날 ≠ 실제 다음 영업일. 이 둘을 구분해야 한다.
+const CLOSED_DOW = 2;   // 화요일 정기휴무 (0=일 … 6=토)
+
+function nextDayKey(key) {
+  const d = new Date(key + 'T12:00:00');
+  d.setDate(d.getDate() + 1);
+  while (d.getDay() === CLOSED_DOW) d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+function onUndoClick() {
+  if (!confirm('완료를 취소할까요? 다시 체크리스트를 수정할 수 있게 됩니다.')) return;
+  currentState.completed = false;
+  currentState.completedAt = '';
+  saveLocalState();
+  renderState();
+  show('s-main');
+}
+
+// ── 영업일 자동 전환 감지 ────────────────────────────────
+// TODAY는 페이지가 처음 로드될 때 딱 한 번만 계산된다. 그래서 앱(특히 홈화면
+// 아이콘으로 열어둔 iOS PWA)을 계속 켜/백그라운드에 둔 채로 실제 시각이
+// 오전 8시 기준을 넘어가도, 새로고침을 하지 않으면 화면은 계속 이전 영업일
+// 상태(예: 전날 완료 화면)로 멈춰 있는 문제가 있었다.
+// → 1분마다, 그리고 앱이 다시 화면에 보일 때마다 오늘의 영업일을 다시 계산해서
+//   페이지 로드 시점과 날짜가 달라졌으면 자동으로 새로고침해 새 영업일의
+//   빈 체크리스트로 넘어가게 한다.
+function checkBusinessDayRollover() {
+  if (todayInfo().key !== TODAY.key) location.reload();
+}
+setInterval(checkBusinessDayRollover, 60000);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') checkBusinessDayRollover();
+});
+
+// ── 어제 마감에서 넘어온 항목 불러오기 ─────────────────
+function loadCarryover() {
+  jsonp({ action: 'carryover', date: TODAY.key })
+    .then(res => {
+      carriedItems = (res && res.items) || [];
+      renderCarryList();
+    })
+    .catch(() => { carriedItems = []; renderCarryList(); });
+}
+
+// ── 초기화 ────────────────────────────────────────────
+renderShell();
+setMode(MODE);
+renderState();
+if (MODE === 'close' && currentState.completed) show('s-done');
+if (MODE === 'open' && openState.completed) show('s-done');
+loadMonthlyState();
+loadCarryover();
+setInterval(loadMonthlyState, 30000);
+</script>
+
+
+<!-- 최신화 버튼 — 누르면 캐시를 비우고 새로 받습니다.
+     화면 파일을 고칠 때마다 아래 APP_VERSION 도 같이 올릴 것. -->
+<div class="refresh-btn" id="refresh-btn">
+  <span class="rb-icon">🔄</span>
+  <span><span class="rb-text">최신화</span><br><span class="rb-ver">v2026-08-22a</span></span>
+</div>
+<script>
+const APP_VERSION = '2026-08-22a';
+document.getElementById('refresh-btn').addEventListener('click', function () {
+  if (!confirm('최신 화면으로 다시 받아올까요?\n지금 버전 v' + APP_VERSION)) return;
+  // 주소 뒤에 시각을 붙이면 폰이 저장해둔 화면을 못 쓰고 새로 받는다
+  location.replace(location.pathname + '?t=' + Date.now());
+});
+</script>
+</body>
+</html>
