@@ -135,6 +135,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun 
 .task-row.trash.checked{border-color:#e11d48;background:#fff1f2}
 .task-row.carry.checked .task-check{background:#f59e0b;border-color:#f59e0b}
 .carry-from{font-size:11px;color:#a16207;margin-top:2px}
+.carry-pre-btn{width:100%;margin:14px 0 4px;padding:13px;border-radius:14px;border:1.5px dashed #fbbf24;background:#fffbeb;color:#b45309;font-size:14px;font-weight:600;cursor:pointer}
+.carry-pre-btn:active{background:#fef3c7}
 .carry-empty{padding:14px 16px;border-radius:14px;background:#f7f7f7;color:#8e8e93;font-size:13px;text-align:center}
 
 /* ── 이월 선택 모달 ── */
@@ -201,6 +203,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun 
 
     <!-- ── 마감 ── -->
     <div id="mode-close">
+      <!-- ⚠️ 2026-09-20 — 마감을 22시쯤부터 시작하니 「이건 내일」 하는 판단도 그때 납니다.
+           00시 완료 직전에만 고르게 해두면 그때쯤 까먹습니다. 그래서 언제든 미리 고를 수 있게. -->
+      <button class="carry-pre-btn" onclick="openCarryPre()">
+        🔁 내일로 넘길 것 미리 고르기<span id="carry-pre-count"></span>
+      </button>
+
       <!-- ⚠️ 2026-09-08 원당 전용 — 월·수·금 아침에 수거해 갑니다.
            그래서 일·화·목 마감 때 내놔야 합니다. 놓치면 사흘을 더 쌓아둬야 해서
            맨 위에 크게 띄웁니다. 해당 요일이 아니면 아예 안 보입니다. -->
@@ -246,9 +254,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun 
       <div class="modal-sub">재료가 없거나 시간이 없어 못 한 것을 골라주세요.<br><b id="carry-target-day">다음 영업일</b> 오픈 화면에 표시됩니다. 없으면 그냥 넘어가시면 됩니다.</div>
     </div>
     <div class="modal-body" id="carry-picker"></div>
-    <div class="modal-foot">
+    <div class="modal-foot" id="carry-foot-final">
       <button class="modal-skip" onclick="finishClosing(false)">없어요</button>
       <button class="modal-go" onclick="finishClosing(true)">넘기고 완료</button>
+    </div>
+    <!-- ⚠️ 미리 고를 때는 「완료」가 아니라 「저장」입니다. 마감은 아직 안 끝났습니다. -->
+    <div class="modal-foot" id="carry-foot-pre" style="display:none">
+      <button class="modal-skip" onclick="closeCarryModal()">닫기</button>
+      <button class="modal-go" onclick="saveCarryPre()">저장</button>
     </div>
   </div>
 </div>
@@ -479,6 +492,10 @@ let openGroups = {};
 
 // ── 오픈 상태 (마감과 따로 저장) ──────────────────────
 const OPEN_KEY = 'openChecklist_wondang_' + TODAY.key;
+// ⚠️ 2026-09-20 — 미리 골라둔 이월 항목을 폰에 저장한다.
+//    그전엔 마감 완료 직전에만 고를 수 있어서, 22시에 「이건 내일」 하고
+//    생각해둔 걸 00시에 까먹는 일이 있었습니다 (사장님 지적).
+const CARRY_KEY = 'carryPicked_wondang_' + TODAY.key;
 function loadOpenState() {
   try {
     const raw = localStorage.getItem(OPEN_KEY);
@@ -849,7 +866,8 @@ function onCompleteClick() {
 
   // 완료 직전에 "오픈으로 넘길 일"을 한 번 물어본다.
   // 항목마다 버튼을 다는 대신 여기서 한 번에 고르게 해서 평소 체크를 방해하지 않는다.
-  carryPicked = {};
+  carryMode = 'final';
+  loadCarryLocal();     // ⚠️ 미리 골라둔 것을 살려서 띄운다. 비우지 않는다
   openCarryModal();
 }
 
@@ -908,16 +926,76 @@ function openCarryModal() {
   var el = document.getElementById('carry-target-day');
   if (el) el.textContent = (dd.getMonth()+1) + '/' + dd.getDate() + '(' + 요일 + ')';
 
+  // 이미 골라둔 것에 표시
+  Object.keys(carryPicked).forEach(function (id) {
+    var c = document.querySelector('#carry-picker .carry-chip[data-id="' + id + '"]');
+    if (c) c.classList.add('on');
+  });
+
+  // 모드에 따라 아래 버튼을 바꾼다
+  var fin = document.getElementById('carry-foot-final');
+  var pre = document.getElementById('carry-foot-pre');
+  if (fin) fin.style.display = (carryMode === 'pre') ? 'none' : '';
+  if (pre) pre.style.display = (carryMode === 'pre') ? '' : 'none';
+  var t = document.querySelector('#carry-modal .modal-title');
+  if (t) t.textContent = (carryMode === 'pre')
+    ? '내일로 넘길 것을 미리 골라두세요'
+    : '오픈 때 해야 할 일이 있나요?';
+
+  updateCarryBtn();
   document.getElementById('carry-modal').classList.add('show');
 }
 
 function updateCarryBtn() {
   const n = Object.keys(carryPicked).length;
-  document.querySelector('.modal-go').textContent = n ? `${n}건 넘기고 완료` : '넘기고 완료';
+  const fin = document.querySelector('#carry-foot-final .modal-go');
+  const pre = document.querySelector('#carry-foot-pre .modal-go');
+  if (fin) fin.textContent = n ? n + '건 넘기고 완료' : '넘기고 완료';
+  if (pre) pre.textContent = n ? n + '건 저장' : '저장';
+  // 마감 화면의 버튼에도 개수를 보여준다 — 골라둔 걸 잊지 않게
+  const badge = document.getElementById('carry-pre-count');
+  if (badge) badge.textContent = n ? ' · ' + n + '건' : '';
+}
+
+/* ── 미리 골라두기 (2026-09-20) ─────────────────────────────
+   왜 필요한가
+     마감은 22시쯤부터 슬슬 시작하는데, 「이건 재료가 없어서 내일」 하는 판단은
+     그때 납니다. 그런데 이월 고르기는 00시 완료 직전에만 떠서 그때쯤이면
+     까먹습니다. 그래서 언제든 미리 골라 저장할 수 있게 했습니다.
+   ⚠️ 폰에 저장하므로 앱을 닫았다 열어도 남아 있습니다.
+   ⚠️ 마감 완료 때 모달이 다시 뜨는데, 미리 고른 것이 이미 체크돼 있습니다.   */
+let carryMode = 'final';
+
+function saveCarryLocal() {
+  try { localStorage.setItem(CARRY_KEY, JSON.stringify(carryPicked)); } catch (e) {}
+}
+function loadCarryLocal() {
+  try {
+    const raw = localStorage.getItem(CARRY_KEY);
+    if (raw) carryPicked = JSON.parse(raw) || {};
+  } catch (e) { carryPicked = {}; }
+}
+function clearCarryLocal() {
+  try { localStorage.removeItem(CARRY_KEY); } catch (e) {}
+}
+
+function openCarryPre() {
+  carryMode = 'pre';
+  loadCarryLocal();
+  openCarryModal();
+}
+function closeCarryModal() {
+  document.getElementById('carry-modal').classList.remove('show');
+}
+function saveCarryPre() {
+  saveCarryLocal();
+  closeCarryModal();
+  updateCarryBtn();
 }
 
 function finishClosing(withCarry) {
   document.getElementById('carry-modal').classList.remove('show');
+  clearCarryLocal();     // 완료했으니 미리 골라둔 것은 지운다
   const picked = withCarry ? Object.values(carryPicked) : [];
 
   showLoading(true, '완료 기록 중…');
