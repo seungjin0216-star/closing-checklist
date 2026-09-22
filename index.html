@@ -115,6 +115,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun 
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ── v2: 상단 탭 · 줄마다 버튼 (2026-09-22) ── */
+.legend{display:flex;flex-wrap:wrap;gap:10px;background:#fff;border:1.5px solid #e8e8ed;border-radius:12px;padding:10px 12px;margin-top:16px;font-size:11.5px;color:#8e8e93}
+.legend span{display:flex;align-items:center;gap:5px}
+.lg{width:22px;height:21px;border-radius:7px;border:1.5px solid;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
+.lg-q{border-color:#dbeafe;background:#eff6ff;color:#2563eb}
+.lg-m{border-color:#fde68a;background:#fffbeb;color:#b45309}
+.lg-c{border-color:#bfdbfe;background:#dbeafe;color:#1d4ed8}
+.area-t{font-size:12px;font-weight:800;color:#8e8e93;margin:16px 0 7px;padding-left:3px}
+.area-t:first-child{margin-top:4px}
+
+/* 시재 화면 */
+.cash-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:800;align-items:flex-end;justify-content:center}
+.cash-ov.show{display:flex}
+.cash-sheet{background:#fff;border-radius:24px 24px 0 0;padding:22px 18px 34px;width:100%;max-width:500px}
+.cash-t{font-size:19px;font-weight:800;text-align:center;margin-bottom:4px}
+.cash-s{font-size:13px;color:#8e8e93;text-align:center;margin-bottom:18px}
+.cash-pick{display:flex;flex-direction:column;gap:10px}
+.cash-btn{padding:17px;border-radius:15px;border:1.5px solid #e5e5ea;background:#fff;font-size:16px;font-weight:700;cursor:pointer}
+.cash-btn.ok{background:#f0fdf4;border-color:#86efac;color:#15803d}
+.cash-btn.no{background:#fef2f2;border-color:#fecaca;color:#b91c1c}
+.cash-btn:active{opacity:.75}
+.cash-row{display:flex;align-items:center;justify-content:space-between;background:#fafafa;border-radius:14px;padding:12px 14px;margin-bottom:9px}
+.cash-lbl{font-size:15px;font-weight:700;color:#3a3a3c}
+.cash-ctl{display:flex;align-items:center;gap:14px}
+.cash-pm{width:44px;height:44px;border-radius:50%;border:none;font-size:24px;font-weight:300;background:#efeff4;color:#3a3a3c;cursor:pointer}
+.cash-pm:active{opacity:.6}
+.cash-n{font-size:22px;font-weight:800;min-width:34px;text-align:center}
+.cash-sum{background:#fef2f2;border-radius:14px;padding:14px;text-align:center;font-size:17px;font-weight:800;color:#b91c1c;margin:4px 0 14px}
+.cash-back{width:100%;padding:13px;border-radius:13px;border:1.5px solid #e5e5ea;background:#fff;font-size:14px;color:#8e8e93;margin-top:8px;cursor:pointer}
 .ctabs{display:flex;gap:6px;margin:16px 0 14px}
 .ctab{flex:1;padding:10px 0;text-align:center;border-radius:12px;border:1.5px solid #e0e0e0;background:#fff;font-size:13px;font-weight:600;color:#8e8e93;cursor:pointer;user-select:none}
 .ctab.on{background:#1c1c1e;border-color:#1c1c1e;color:#fff}
@@ -243,6 +271,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun 
                       보고 바로 할 수 있게끔」
            이제 줄마다 🔁 가 있습니다. -->
 
+      <!-- ⚠️ 2026-09-22 — 버튼이 뭔지 모르면 안 누릅니다. 사장님 말:
+           「현재 아이콘에 대한 설명을 날짜와 4개 카드 사이에 만들어줘.
+             뭔지는 알아야 체크를 하니까」 -->
+      <div class="legend">
+        <span><b class="lg lg-q">?</b> 기준 · 방법</span>
+        <span><b class="lg lg-m">🔁</b> 내일로 넘기기</span>
+        <span><b class="lg lg-c">🛒</b> 발주에 담기</span>
+      </div>
+
       <!-- ⚠️ 2026-09-22 — 탭으로 나눴습니다.
            그전에는 채우기·청소·마지막·월간을 쭉 드래그해서 내려야 했습니다.
            사장님 말: 「상단 탭으로 만들어서 클릭해서 밑으로 나오게끔 하자」 -->
@@ -286,6 +323,48 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun 
   <div class="bottom-bar">
     <div class="inner">
       <button class="submit-btn" id="completeBtn">전부 체크하면 완료할 수 있어요</button>
+    </div>
+  </div>
+</div>
+
+<!-- 💰 마감정산 · 시재 (2026-09-22)
+     ⚠️ 그전에는 「마감정산·시재 맞추기」가 그냥 체크 항목이었습니다.
+        체크만 하면 시재가 맞았는지 아무도 모릅니다.
+        사장님 말: 「시재 부족시 나한테 연락이든 알림이든 오게 해주면 내가 시재 챙기게」 -->
+<div class="cash-ov" id="cash-ov">
+  <div class="cash-sheet">
+    <div id="cash-step1">
+      <div class="cash-t">💰 마감정산 · 시재</div>
+      <div class="cash-s">시재를 맞춰보고 알려주세요</div>
+      <div class="cash-pick">
+        <button class="cash-btn ok" onclick="시재맞음_()">시재 맞음</button>
+        <button class="cash-btn no" onclick="시재부족_()">시재 부족</button>
+      </div>
+      <button class="cash-back" onclick="시재닫기_()">나중에 하기</button>
+    </div>
+
+    <div id="cash-step2" style="display:none">
+      <div class="cash-t">얼마가 비었습니까?</div>
+      <div class="cash-s">부족한 만큼만 눌러주세요</div>
+      <div class="cash-row">
+        <span class="cash-lbl">만원</span>
+        <span class="cash-ctl">
+          <button class="cash-pm" onclick="시재올림_('man',-1)">−</button>
+          <span class="cash-n" id="cash-man">0</span>
+          <button class="cash-pm" onclick="시재올림_('man',1)">＋</button>
+        </span>
+      </div>
+      <div class="cash-row">
+        <span class="cash-lbl">천원</span>
+        <span class="cash-ctl">
+          <button class="cash-pm" onclick="시재올림_('chun',-1)">−</button>
+          <span class="cash-n" id="cash-chun">0</span>
+          <button class="cash-pm" onclick="시재올림_('chun',1)">＋</button>
+        </span>
+      </div>
+      <div class="cash-sum" id="cash-sum">0원 부족</div>
+      <button class="cash-btn no" onclick="시재보내기_()">사장님께 알리고 완료</button>
+      <button class="cash-back" onclick="시재뒤로_()">← 다시 고르기</button>
     </div>
   </div>
 </div>
@@ -462,14 +541,32 @@ const OPEN_ITEMS = [
 // 마감 때 못 하면 오픈으로 넘길 수 있는 그룹 (재료 손질이 대부분 여기서 나온다)
 const CARRY_GROUP_IDS = ['g_left', 'g_right', 'g_six', 'g_meat'];
 
-const CLEAN_ITEMS = [
-  { id: 'c0', label: '테이블 다시 닦기' },
-  { id: 'c1', label: '쓴 행주 전부 삶기 (테이블행주 포함)' },
-  { id: 'c2', label: '술박스 정리하기' },
-  { id: 'c3', label: '화구 라인 청소' },
-  { id: 'c4', label: '식기세척기 끄고 청소' },
-  { id: 'c5', label: '쓰레기(분리수거) 비우기' },
+// ⚠️ 2026-09-22 — 청소를 홀·주방으로 나눴습니다 (사장님 지시).
+//    한 덩어리로 있으면 동선이 섞입니다. 홀 치우다 주방 갔다 다시 홀로 오게 됩니다.
+//
+//    ⚠️ c0~c5 의 id 는 그대로 둡니다. 지난 기록이 이 id 로 쌓여 있어서
+//       바꾸면 예전 것이 통째로 안 보이게 됩니다.
+//       c5 는 이름만 「분리수거하기」로 바뀌었습니다.
+const CLEAN_GROUPS = [
+  { label: '홀', items: [
+    { id: 'c0',  label: '테이블 다시 닦기' },
+    { id: 'c2',  label: '술박스 정리하기' },
+    { id: 'c3',  label: '화구 라인 청소' },
+    { id: 'c6',  label: '결제 영수증 버리기 (4개 남기기)' },
+    { id: 'c5',  label: '분리수거하기' },
+  ]},
+  { label: '주방', items: [
+    { id: 'c7',  label: '주방 화구 · 선반 닦기' },
+    { id: 'c8',  label: '바닥 청소' },
+    { id: 'c9',  label: '냉장고 문 닦기' },
+    { id: 'c1',  label: '쓴 행주 전부 삶기 (테이블행주 포함)' },
+    { id: 'c4',  label: '식기세척기 끄고 청소' },
+    { id: 'c10', label: '쓰레기통 비우기' },
+  ]},
 ];
+
+// 나머지 코드는 여전히 평평한 목록을 씁니다 — 여기서 만들어 줍니다.
+const CLEAN_ITEMS = CLEAN_GROUPS.reduce(function (a, g) { return a.concat(g.items); }, []);
 
 const WEEKLY_ITEMS = [
   { id: 'w1', label: '덕트 청소', weekday: 1 }, // 1 = 월요일
@@ -481,13 +578,15 @@ const MONTHLY_ITEMS = [
   { id: 'm3', label: '유리 청소' },
 ];
 
+// ⚠️ 2026-09-22 — 둘을 뺐습니다 (사장님 지시)
+//    x5 영수증 정리하기   → 없앰. 청소의 「결제 영수증 버리기」로 갈음합니다
+//    x6 마감정산·시재      → 체크가 아니라 「완료」 누를 때 숫자를 받습니다
+//                          체크만 하면 시재가 맞는지 아무도 모릅니다
 const FINAL_ITEMS = [
   { id: 'x1', label: '고기·식자재 발주 무조건 하기' },
   { id: 'x2', label: '저녁 먹을 거 확인 후 주문' },
   { id: 'x3', label: '에어컨 끄기 (홀3, 주방1)' },
   { id: 'x4', label: '가스 끄기' },
-  { id: 'x5', label: '영수증 정리하기' },   // 2026-09-20 사장님 요청 — 마감정산 바로 위
-  { id: 'x6', label: '마감정산·시재 맞추기' },
 ];
 
 function flattenFillItems() {
@@ -838,12 +937,26 @@ function 낱개토글_(id) {
 //    ⚠️ 미룬다고 체크가 풀리지는 않습니다. 「오늘 안 함」 표시일 뿐입니다.
 function 미루기_(e, id) {
   e.stopPropagation();          // 줄 전체가 체크되지 않게
-  if (carryPicked[id]) delete carryPicked[id];
-  else {
+
+  const 켜기 = !carryPicked[id];
+  if (켜기) {
     const it = 항목찾기_(id);
     carryPicked[id] = it ? (it.label || id) : id;
+  } else {
+    delete carryPicked[id];
   }
   saveCarryLocal();
+
+  // ⚠️ 2026-09-22 — 넘기면 체크도 같이 켭니다 (사장님 지시).
+  //    사장님 말: 「재고가 없어서 못해서 넘겼는데 체크를 한번 더 할 이유가 없음」
+  //    넘긴 것은 오늘 할 일에서 빠진 것이므로 진행률에서도 빠져야 맞습니다.
+  //    ⚠️ 넘기기를 풀면 체크도 같이 풉니다. 안 그러면 안 한 일이 한 것으로 남습니다.
+  const 상태 = (MODE === 'open') ? openState : currentState;
+  const 지금 = !!(상태.checks[id] && 상태.checks[id].checked);
+  if (지금 !== 켜기) {
+    const it = 항목찾기_(id);
+    if (it) { (MODE === 'open') ? onToggleOpen(it) : onToggle(it); return; }
+  }
   renderState();
 }
 
@@ -1003,7 +1116,7 @@ function 바구니그리기_() {
 }
 
 // ── 렌더링 ────────────────────────────────────────────
-function taskRowHtml(item, extraClass) {
+function taskRowHtml(item, extraClass, 버튼없이) {
   return `
     <div class="task-row${extraClass ? ' ' + extraClass : ''}" id="row-${item.id}" data-id="${item.id}">
       <div class="task-check" id="chk-${item.id}"></div>
@@ -1011,7 +1124,7 @@ function taskRowHtml(item, extraClass) {
         <div class="task-label">${item.label}</div>
         <div class="task-meta" id="meta-${item.id}"></div>
       </div>
-      ${버튼들_(item)}
+      ${버튼없이 ? '' : 버튼들_(item)}
     </div>`;
 }
 
@@ -1074,7 +1187,11 @@ function renderShell() {
     entry.type === 'group' ? groupCardHtml(entry) : taskRowHtml(entry)
   ).join('');
 
-  document.getElementById('cleanList').innerHTML = CLEAN_ITEMS.map(it => taskRowHtml(it)).join('');
+  // 청소는 홀·주방으로 나눠 그립니다
+  document.getElementById('cleanList').innerHTML = CLEAN_GROUPS.map(function (g) {
+    return '<div class="area-t">' + g.label + '</div>' +
+           g.items.map(function (it) { return taskRowHtml(it); }).join('');
+  }).join('');
   document.getElementById('finalList').innerHTML = FINAL_ITEMS.map(it => taskRowHtml(it, 'extra')).join('');
 
   if (IS_MONDAY) {
@@ -1112,7 +1229,9 @@ function renderShell() {
   });
 
   // 오픈 항목
-  document.getElementById('openList').innerHTML = OPEN_ITEMS.map(it => taskRowHtml(it)).join('');
+  // ⚠️ 2026-09-22 — 오픈에는 🔁 를 안 붙입니다 (사장님 지시).
+  //    오픈에서 또 내일로 넘기면 끝없이 밀립니다. 오픈은 그날 하는 것입니다.
+  document.getElementById('openList').innerHTML = OPEN_ITEMS.map(it => taskRowHtml(it, '', true)).join('');
   OPEN_ITEMS.forEach(it => {
     const el = document.getElementById('row-' + it.id);
     if (el) el.addEventListener('click', () => onToggleOpen(it));
@@ -1370,11 +1489,82 @@ function onCompleteClick() {
   const allChecked = REQUIRED_ITEMS.every(it => currentState.checks[it.id] && currentState.checks[it.id].checked);
   if (!allChecked) return;
 
-  // 완료 직전에 "오픈으로 넘길 일"을 한 번 물어본다.
-  // 항목마다 버튼을 다는 대신 여기서 한 번에 고르게 해서 평소 체크를 방해하지 않는다.
-  carryMode = 'final';
-  loadCarryLocal();     // ⚠️ 미리 골라둔 것을 살려서 띄운다. 비우지 않는다
-  openCarryModal();
+  // ⚠️ 2026-09-22 — 완료 직전에 시재부터 묻습니다.
+  //    「넘길 일 고르기」는 이제 줄마다 🔁 로 하므로 따로 안 묻습니다.
+  시재열기_();
+}
+
+// ══════════════════════════════════════════════════════════
+//  💰 마감정산 · 시재  (2026-09-22)
+//
+//  사장님 말: 「마감 완료시킬 때 마감정산&시재 맞추기 뜨고
+//             시재 맞음 / 시재 부족 만원·천원 단위해서 적게끔.
+//             시재 부족시 나한테 연락이든 알림이든 오게 해주면 내가 시재 챙기게」
+//
+//  ⚠️ 그전에는 그냥 체크 항목이었습니다. 체크만 하면 맞았는지 아무도 모릅니다.
+// ══════════════════════════════════════════════════════════
+let 시재만 = 0, 시재천 = 0;
+
+function 시재열기_() {
+  시재만 = 0; 시재천 = 0;
+  document.getElementById('cash-step1').style.display = '';
+  document.getElementById('cash-step2').style.display = 'none';
+  시재그리기_();
+  document.getElementById('cash-ov').classList.add('show');
+}
+function 시재닫기_() { document.getElementById('cash-ov').classList.remove('show'); }
+function 시재뒤로_() {
+  document.getElementById('cash-step1').style.display = '';
+  document.getElementById('cash-step2').style.display = 'none';
+}
+function 시재부족_() {
+  document.getElementById('cash-step1').style.display = 'none';
+  document.getElementById('cash-step2').style.display = '';
+  시재그리기_();
+}
+function 시재올림_(칸, d) {
+  if (칸 === 'man') 시재만 = Math.max(0, 시재만 + d);
+  else              시재천 = Math.max(0, 시재천 + d);
+  시재그리기_();
+}
+function 시재그리기_() {
+  document.getElementById('cash-man').textContent  = 시재만;
+  document.getElementById('cash-chun').textContent = 시재천;
+  const 액 = 시재만 * 10000 + 시재천 * 1000;
+  document.getElementById('cash-sum').textContent = 액.toLocaleString('ko-KR') + '원 부족';
+}
+
+function 시재맞음_() {
+  시재보고_(0);
+  시재닫기_();
+  마감완료진행_();
+}
+
+function 시재보내기_() {
+  const 액 = 시재만 * 10000 + 시재천 * 1000;
+  if (액 <= 0) { alert('부족한 금액을 눌러주세요.'); return; }
+  시재보고_(액);
+  시재닫기_();
+  alert('사장님께 알렸습니다.\n' + 액.toLocaleString('ko-KR') + '원 부족');
+  마감완료진행_();
+}
+
+// ⚠️ 부족할 때만 메일이 갑니다. 맞으면 시트에 기록만 남습니다.
+//    매일 「맞음」 메일이 오면 사흘 만에 안 읽게 됩니다.
+function 시재보고_(부족액) {
+  postAction({
+    action : 'cash',
+    date   : TODAY.key,
+    short  : 부족액,
+    device : 폰번호,
+  });
+}
+
+// 시재를 마치면 곧바로 완료합니다.
+// ⚠️ 「넘길 일 고르기」를 또 묻지 않습니다 — 이미 줄마다 🔁 로 골라뒀으니까요.
+function 마감완료진행_() {
+  loadCarryLocal();
+  finishClosing(true);
 }
 
 function onCompleteOpen() {
@@ -1635,7 +1825,7 @@ document.addEventListener('visibilitychange', function () {
   <span><span class="rb-text">최신화</span><br><span class="rb-ver" id="rb-ver">v…</span></span>
 </div>
 <script>
-const APP_VERSION = '2026-09-22-v2';
+const APP_VERSION = '2026-09-22-v2b';
 
 // ⚠️ 2026-09-22 — 버전 글자를 여기서 화면에 써넣습니다.
 //    그전에는 화면(HTML)과 코드(APP_VERSION) 두 군데에 따로 적혀 있었습니다.

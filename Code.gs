@@ -105,6 +105,8 @@ function doPost(e) {
     result = saveChecks(data);
   } else if (data.action === 'nameDevice') {
     result = nameDevice(data.device, data.name);
+  } else if (data.action === 'cash') {
+    result = saveCash(data);
   } else {
     result = { ok: false, message: 'unknown action' };
   }
@@ -406,6 +408,81 @@ function nameDevice(device, name) {
     }
     return { ok: false, message: '그런 폰이 없습니다: ' + device };
   });
+}
+
+
+// ══════════════════════════════════════════════════════════
+//  💰 마감정산 · 시재  (2026-09-22)
+//
+//  사장님 말: 「시재 부족시 나한테 연락이든 알림이든 오게 해주면 내가 시재 챙기게」
+//
+//  ⚠️ 부족할 때만 메일이 갑니다. 맞으면 시트에 기록만 남습니다.
+//     매일 「맞음」 메일이 오면 사흘 만에 안 읽게 됩니다.
+//     그러면 정작 부족한 날의 메일도 안 읽게 됩니다.
+//
+//  ⚠️ 메일인 이유 — 솔라피 문자는 돈이 들고, 키가 막히면 알림 자체가 안 갑니다.
+//     MailApp 은 구글 내장이라 키도 필요 없고 솔라피 상태와 무관합니다.
+// ══════════════════════════════════════════════════════════
+
+const CASH_SHEET_NAME = 'Cash';
+
+function getCashSheet_(branch) {
+  const ss   = getSs_();
+  const name = sheetName_(CASH_SHEET_NAME, branch);
+  let sheet  = ss.getSheetByName(name);
+  if (!sheet) {
+    sheet = ss.insertSheet(name);
+    sheet.appendRow(['날짜', '시각', '결과', '부족액', '폰']);
+    sheet.getRange(1, 1, 1, 5).setFontWeight('bold').setBackground('#fee2e2');
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function saveCash(data) {
+  return withLock_(function () {
+    const date   = data.date || todayStr_();
+    const 부족    = Number(data.short) || 0;
+    const now    = new Date();
+    const 시각    = Utilities.formatDate(now, TIMEZONE, 'HH:mm');
+    const 지점    = (String(data.branch || 'baekseok') === 'wondang') ? '원당' : '백석';
+
+    getCashSheet_(data.branch).appendRow([
+      date, 시각, 부족 > 0 ? '부족' : '맞음', 부족, String(data.device || ''),
+    ]);
+
+    if (부족 > 0) {
+      try {
+        const 사람 = 폰이름_(String(data.device || ''));
+        MailApp.sendEmail({
+          to      : Session.getEffectiveUser().getEmail(),
+          subject : '💰 [' + 지점 + '] 시재 부족 ' + 부족.toLocaleString() + '원 — ' + date,
+          body    : [
+            지점 + '점 마감 시재가 부족합니다.',
+            '',
+            '날짜    ' + date,
+            '시각    ' + 시각,
+            '부족액  ' + 부족.toLocaleString() + '원',
+            '올린 폰  ' + (사람 || data.device || '알 수 없음'),
+            '',
+            '— 마감체크리스트',
+          ].join('\n'),
+        });
+      } catch (err) {
+        // ⚠️ 메일이 실패해도 기록은 이미 남았습니다. 여기서 멈추면 안 됩니다.
+        console.log('시재 메일 실패: ' + err.message);
+      }
+    }
+    return { ok: true, short: 부족 };
+  });
+}
+
+// 폰 번호 → 사장님이 붙인 이름
+function 폰이름_(device) {
+  try {
+    const t = deviceNames_();
+    return t[device] || '';
+  } catch (err) { return ''; }
 }
 
 
