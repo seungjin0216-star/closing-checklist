@@ -64,6 +64,10 @@ function doGet(e) {
     result = getMonthlyState(params.month, params.branch);
   } else if (action === 'carryover') {
     result = getCarryover(params.date, params.branch);
+  } else if (action === 'checks') {
+    result = getChecks(params.date, params.mode, params.branch);
+  } else if (action === 'devices') {
+    result = getDevices();
   } else {
     return HtmlService.createHtmlOutput(
       '<meta charset="utf-8"><body style="font-family:sans-serif;padding:40px;text-align:center;">' +
@@ -97,6 +101,10 @@ function doPost(e) {
     result = saveCarryover(data.fromDate, data.targetDate, data.items, data.branch);
   } else if (data.action === 'toggleMonthly') {
     result = toggleMonthly(data.month, data.itemId, data.checked, data.branch);
+  } else if (data.action === 'checks') {
+    result = saveChecks(data);
+  } else if (data.action === 'nameDevice') {
+    result = nameDevice(data.device, data.name);
   } else {
     result = { ok: false, message: 'unknown action' };
   }
@@ -186,6 +194,220 @@ function withLock_(fn) {
     lock.releaseLock();
   }
 }
+
+// ══════════════════════════════════════════════════════════
+//  체크 공유 (2026-09-22 추가)
+//
+//  왜 넣었나 — 사장님 말:
+//    「각각의 핸드폰에서 움직여지니 머가 문젠지 추적하기가 불편함」
+//
+//  그전까지 체크는 그 폰 안에만 있었습니다. 둘이 나눠 마감하면 서로 뭘 했는지
+//  몰랐고, 사장님도 나중에 볼 방법이 없었습니다.
+//
+//  ⚠️ 예전에 한 번 공유를 넣었다가 뺀 적이 있습니다 (index.html v4 주석).
+//     체크할 때마다 서버 답을 기다리게 만들어서 주춤거렸기 때문입니다.
+//     이번에는 화면을 먼저 바꾸고 올리는 건 뒤에서 합니다 — 기다리지 않습니다.
+//
+//  ── 쌓기만 하고 고치지 않습니다 ────────────────────────
+//     같은 항목을 껐다 켜도 줄을 고치지 않고 새 줄을 답니다.
+//     ① 두 폰이 동시에 눌러도 서로 덮어쓸 일이 없습니다
+//     ② 「누가 언제 뭘 눌렀나」가 통째로 남습니다 — 추적하려고 만든 것이니까요
+//     읽을 때 항목마다 마지막 줄만 취하면 지금 상태가 됩니다.
+// ══════════════════════════════════════════════════════════
+
+const CHECK_SHEET_NAME  = 'Checks';
+const DEVICE_SHEET_NAME = 'Devices';   // ⚠️ 지점 구분 없음 — 폰은 지점을 오갑니다
+
+function getCheckSheet_(branch) {
+  const ss   = getSs_();
+  const name = sheetName_(CHECK_SHEET_NAME, branch);
+  let sheet  = ss.getSheetByName(name);
+  if (!sheet) {
+    sheet = ss.insertSheet(name);
+    sheet.appendRow(['시각', '날짜', '모드', '항목', '켬/끔', '폰', '찍힌시각']);
+    sheet.getRange(1, 1, 1, 7).setFontWeight('bold').setBackground('#e0e7ff');
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+function getDeviceSheet_() {
+  const ss  = getSs_();
+  let sheet = ss.getSheetByName(DEVICE_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(DEVICE_SHEET_NAME);
+    sheet.appendRow(['폰', '이름', '기종', '첫 접속', '마지막 접속', '누른 횟수']);
+    sheet.getRange(1, 1, 1, 6).setFontWeight('bold').setBackground('#fef3c7');
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+// ── 체크 저장 ────────────────────────────────────────────
+//    앱이 1.5초쯤 모았다가 한 번에 보냅니다. 낱개로 오면 줄이 너무 많아집니다.
+function saveChecks(data) {
+  return withLock_(function () {
+    const items  = data.items || [];
+    if (!items.length) return { ok: true, saved: 0 };
+
+    const date   = data.date || todayStr_();
+    const mode   = data.mode || 'close';
+    const device = String(data.device || '?');
+    const now    = new Date();
+
+    const rows = items.map(function (it) {
+      return [
+        now, date, mode, String(it.id),
+        it.checked ? '켬' : '끔',
+        device,
+        it.at || Utilities.formatDate(now, TIMEZONE, 'HH:mm'),
+      ];
+    });
+
+    const sheet = getCheckSheet_(data.branch);
+    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 7).setValues(rows);
+
+    touchDevice_(device, data.ua, items.length);
+    return { ok: true, saved: rows.length };
+  });
+}
+
+// ── 폰 기록 ──────────────────────────────────────────────
+//    ⚠️ 이름은 건드리지 않습니다. 사장님이 붙인 이름을 덮어쓰면 안 됩니다.
+function touchDevice_(device, ua, count) {
+  try {
+    const sheet = getDeviceSheet_();
+    const last  = sheet.getLastRow();
+    const now   = new Date();
+
+    if (last >= 2) {
+      const keys = sheet.getRange(2, 1, last - 1, 1).getValues();
+      for (let i = 0; i < keys.length; i++) {
+        if (String(keys[i][0]) === device) {
+          const row = i + 2;
+          sheet.getRange(row, 5).setValue(now);
+          const prev = Number(sheet.getRange(row, 6).getValue()) || 0;
+          sheet.getRange(row, 6).setValue(prev + (count || 1));
+          return;
+        }
+      }
+    }
+    sheet.appendRow([device, '', String(ua || ''), now, now, count || 1]);
+  } catch (err) {
+    // 폰 기록이 실패해도 체크는 이미 저장됐습니다. 여기서 멈추면 안 됩니다.
+    console.log('폰 기록 실패: ' + err.message);
+  }
+}
+
+// ── 체크 읽기 ────────────────────────────────────────────
+//    ⚠️ 뒤에서부터 훑어 항목마다 처음 만난 줄(= 가장 최근)만 취합니다.
+function getChecks(dateStr, mode, branch) {
+  const date  = dateStr || todayStr_();
+  const want  = mode || 'close';
+  const sheet = getCheckSheet_(branch);
+  const last  = sheet.getLastRow();
+  if (last < 2) return { ok: true, checks: {} };
+
+  // 하루치만 보면 되므로 끝에서 800줄만 읽습니다 (전체를 읽으면 점점 느려집니다)
+  const from  = Math.max(2, last - 800 + 1);
+  const rows  = sheet.getRange(from, 1, last - from + 1, 7).getValues();
+
+  const checks = {};
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const r = rows[i];
+    if (rowDate_(r[1]) !== date) continue;
+    if (String(r[2]) !== want)   continue;
+    const id = String(r[3]);
+    if (checks[id]) continue;                  // 이미 더 최근 줄을 잡았습니다
+    checks[id] = {
+      checked: String(r[4]) === '켬',
+      at     : rowTime_(r[6]) || '',
+      device : String(r[5] || ''),
+    };
+  }
+  return { ok: true, checks: checks, names: deviceNames_() };
+}
+
+// ── 폰 → 이름 표 ─────────────────────────────────────────
+function deviceNames_() {
+  const out   = {};
+  try {
+    const sheet = getDeviceSheet_();
+    const last  = sheet.getLastRow();
+    if (last < 2) return out;
+    sheet.getRange(2, 1, last - 1, 2).getValues().forEach(function (r) {
+      if (r[1]) out[String(r[0])] = String(r[1]);
+    });
+  } catch (err) {}
+  return out;
+}
+
+// ── 폰 목록 (사장님 화면용) ──────────────────────────────
+function getDevices() {
+  const sheet = getDeviceSheet_();
+  const last  = sheet.getLastRow();
+  if (last < 2) return { ok: true, devices: [] };
+
+  const rows = sheet.getRange(2, 1, last - 1, 6).getValues();
+  const list = rows.map(function (r) {
+    return {
+      device: String(r[0]),
+      name  : String(r[1] || ''),
+      ua    : String(r[2] || ''),
+      first : r[3] instanceof Date ? Utilities.formatDate(r[3], TIMEZONE, 'M/d HH:mm') : String(r[3] || ''),
+      last  : r[4] instanceof Date ? Utilities.formatDate(r[4], TIMEZONE, 'M/d HH:mm') : String(r[4] || ''),
+      count : Number(r[5]) || 0,
+      hours : deviceHours_(String(r[0])),
+    };
+  });
+  return { ok: true, devices: list };
+}
+
+// ── 그 폰이 주로 몇 시에 쓰나 ────────────────────────────
+//    ⚠️ 이름을 붙일 때 제일 좋은 단서입니다. 오픈조는 아침, 마감조는 밤에 찍힙니다.
+function deviceHours_(device) {
+  try {
+    const sheet = getCheckSheet_('baekseok');
+    const last  = sheet.getLastRow();
+    if (last < 2) return '';
+    const from = Math.max(2, last - 1500 + 1);
+    const rows = sheet.getRange(from, 1, last - from + 1, 6).getValues();
+
+    const tally = {};
+    rows.forEach(function (r) {
+      if (String(r[5]) !== device) return;
+      if (!(r[0] instanceof Date)) return;
+      const h = Number(Utilities.formatDate(r[0], TIMEZONE, 'H'));
+      tally[h] = (tally[h] || 0) + 1;
+    });
+
+    const hours = Object.keys(tally);
+    if (!hours.length) return '';
+    hours.sort(function (a, b) { return tally[b] - tally[a]; });
+    return hours.slice(0, 2).map(function (h) { return h + '시'; }).join('·');
+  } catch (err) {
+    return '';
+  }
+}
+
+// ── 폰에 이름 붙이기 (사장님만) ──────────────────────────
+function nameDevice(device, name) {
+  return withLock_(function () {
+    const sheet = getDeviceSheet_();
+    const last  = sheet.getLastRow();
+    if (last < 2) return { ok: false, message: '폰 기록이 없습니다' };
+
+    const keys = sheet.getRange(2, 1, last - 1, 1).getValues();
+    for (let i = 0; i < keys.length; i++) {
+      if (String(keys[i][0]) === String(device)) {
+        sheet.getRange(i + 2, 2).setValue(String(name || ''));
+        return { ok: true };
+      }
+    }
+    return { ok: false, message: '그런 폰이 없습니다: ' + device };
+  });
+}
+
 
 // ===== 완료 기록 (개별) =====
 // 체크 자체는 폰 안에서만 처리되고, "완료하기"를 누른 순간에만 한 번 호출된다.

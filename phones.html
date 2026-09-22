@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>폰 목록 — 마감체크리스트</title>
+<link rel="icon" href="icon-192.png">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+     background:#f2f2f7;color:#1c1c1e;padding:20px 16px 60px;line-height:1.5}
+.wrap{max-width:560px;margin:0 auto}
+h1{font-size:21px;font-weight:800;letter-spacing:-.4px}
+.sub{color:#8e8e93;font-size:13px;margin:4px 0 18px}
+
+.note{background:#fffbeb;border-left:3px solid #f59e0b;padding:12px 14px;border-radius:0 10px 10px 0;
+      font-size:13px;color:#78350f;margin-bottom:16px;line-height:1.55}
+.note b{color:#000}
+
+.card{background:#fff;border-radius:16px;padding:15px 16px;margin-bottom:11px;
+      box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.top{display:flex;align-items:center;gap:10px}
+.id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;font-weight:700;
+    background:#eef2ff;color:#4338ca;padding:3px 9px;border-radius:8px}
+.kind{font-size:13px;color:#636366;font-weight:600}
+.name{margin-left:auto;font-size:15px;font-weight:700}
+.name.none{color:#c7c7cc;font-weight:500}
+
+.facts{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+.fact{background:#f2f2f7;border-radius:8px;padding:5px 9px;font-size:11.5px;color:#48484a}
+.fact b{color:#1c1c1e}
+.fact.hot{background:#fff4ed;color:#9a3412}
+
+.row{display:flex;gap:8px;margin-top:12px}
+input{flex:1;min-width:0;padding:11px 13px;border-radius:11px;border:1.5px solid #e5e5ea;
+      font-size:15px;font-family:inherit;background:#fafafa}
+input:focus{outline:none;border-color:#6366f1;background:#fff}
+button{padding:11px 17px;border-radius:11px;border:none;background:#1c1c1e;color:#fff;
+       font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap}
+button:active{opacity:.7}
+button.gray{background:#e5e5ea;color:#3a3a3c}
+
+.quick{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.quick span{background:#fff;border:1.5px solid #e5e5ea;border-radius:16px;padding:6px 13px;
+            font-size:13px;color:#3a3a3c;cursor:pointer}
+.quick span:active{background:#f2f2f7}
+
+.empty{background:#fff;border-radius:16px;padding:40px 20px;text-align:center;color:#8e8e93;font-size:14px}
+.load{text-align:center;color:#8e8e93;font-size:14px;padding:40px 0}
+.ok{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#1c1c1e;color:#fff;
+    padding:11px 20px;border-radius:22px;font-size:14px;font-weight:600;opacity:0;
+    transition:opacity .2s;pointer-events:none;z-index:9}
+.ok.show{opacity:1}
+.back{display:inline-block;margin-top:20px;color:#6366f1;font-size:14px;font-weight:600;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>📱 이 가게에서 쓰는 폰</h1>
+<div class="sub">마감체크리스트를 연 폰들입니다</div>
+
+<div class="note">
+  <b>직원은 아무것도 안 합니다.</b> 앱을 열면 번호가 알아서 붙습니다.<br>
+  <b>기종과 쓰는 시간대</b>를 보고 누구 것인지 알아보신 뒤 이름만 달아주세요.
+  오픈조는 아침에, 마감조는 밤에 찍힙니다.
+</div>
+
+<div id="list"><div class="load">불러오는 중…</div></div>
+
+<a class="back" href="index.html">← 마감체크리스트로</a>
+</div>
+
+<div class="ok" id="ok">저장했습니다</div>
+
+<script>
+// ⚠️ 마감체크리스트와 같은 주소를 씁니다. 여기가 바뀌면 저쪽도 같이 바꿔야 합니다.
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxeauYyGzxWMcPSrpHAidBAnYMuIZW3XqmGg1gTomZfuM7vdmfJl2y-VG1Hk72ohFhTZg/exec';
+
+// 자주 쓰는 이름 — 눌러서 바로 넣습니다. 타자가 번거로우니까요.
+const 흔한이름 = ['어머니', '사장님', '직원A', '직원B', '오픈조', '마감조'];
+
+function jsonp(params) {
+  return new Promise((resolve, reject) => {
+    const cb = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+    const t  = setTimeout(() => { done(); reject(new Error('timeout')); }, 12000);
+    function done() { clearTimeout(t); delete window[cb]; if (s.parentNode) s.parentNode.removeChild(s); }
+    window[cb] = d => { done(); resolve(d); };
+    const qs = Object.keys(params).map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k])).join('&');
+    const s = document.createElement('script');
+    s.src = GAS_URL + '?' + qs + '&callback=' + cb;
+    s.onerror = () => { done(); reject(new Error('load error')); };
+    document.body.appendChild(s);
+  });
+}
+
+function post(payload) {
+  return fetch(GAS_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let 폰들 = [];
+
+function 그리기() {
+  const box = document.getElementById('list');
+  if (!폰들.length) {
+    box.innerHTML = '<div class="empty">아직 기록된 폰이 없습니다.<br>' +
+      '직원이 마감체크리스트에서 무엇이든 한 번 체크하면 여기 나타납니다.</div>';
+    return;
+  }
+
+  box.innerHTML = 폰들.map((p, i) => {
+    const 이름 = p.name ? esc(p.name) : '이름 없음';
+    const cls  = p.name ? '' : ' none';
+    const 시간 = p.hours ? `<span class="fact hot">주로 <b>${esc(p.hours)}</b></span>` : '';
+    return `
+      <div class="card">
+        <div class="top">
+          <span class="id">${esc(p.device)}</span>
+          <span class="kind">${esc(p.ua || '기종 모름')}</span>
+          <span class="name${cls}">${이름}</span>
+        </div>
+        <div class="facts">
+          <span class="fact">처음 <b>${esc(p.first)}</b></span>
+          <span class="fact">마지막 <b>${esc(p.last)}</b></span>
+          <span class="fact">누른 횟수 <b>${p.count}</b></span>
+          ${시간}
+        </div>
+        <div class="row">
+          <input id="in-${i}" value="${esc(p.name)}" placeholder="누구 폰입니까?">
+          <button onclick="저장(${i})">저장</button>
+        </div>
+        <div class="quick">
+          ${흔한이름.map(n => `<span onclick="넣기(${i},'${n}')">${n}</span>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function 넣기(i, 이름) {
+  document.getElementById('in-' + i).value = 이름;
+}
+
+function 저장(i) {
+  const 이름 = document.getElementById('in-' + i).value.trim();
+  post({ action: 'nameDevice', device: 폰들[i].device, name: 이름 });
+  폰들[i].name = 이름;          // ⚠️ 화면 먼저. 여기도 서버를 기다리지 않습니다
+  그리기();
+  알림();
+}
+
+function 알림() {
+  const el = document.getElementById('ok');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 1400);
+}
+
+jsonp({ action: 'devices' })
+  .then(res => {
+    폰들 = (res && res.devices) || [];
+    // 최근에 쓴 폰이 위로
+    폰들.sort((a, b) => String(b.last).localeCompare(String(a.last)));
+    그리기();
+  })
+  .catch(() => {
+    document.getElementById('list').innerHTML =
+      '<div class="empty">불러오지 못했습니다.<br>잠시 뒤 새로고침해 주세요.</div>';
+  });
+</script>
+</body>
+</html>

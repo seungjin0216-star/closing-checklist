@@ -401,6 +401,10 @@ function todayInfo() {
   };
 }
 const TODAY = todayInfo();
+
+// ⚠️ 이 화면은 백석입니다. 원당은 wondang.html 이고 거기는 'wondang' 입니다.
+//    서버가 지점별로 다른 시트에 나눠 담습니다.
+const BRANCH = 'baekseok';
 const IS_MONDAY = TODAY.dow === 1;
 const DAYS_LEFT_IN_MONTH = TODAY.daysInMonth - TODAY.day;
 
@@ -425,7 +429,42 @@ function defaultMode() {
 }
 let MODE = defaultMode();
 
-// v4: 체크 상태는 이제 서버와 공유하지 않고 이 폰(브라우저) 안에서만 관리한다.
+// ══════════════════════════════════════════════════════════
+//  폰 번호 — 이 폰이 누구인지 (2026-09-22 추가)
+//
+//  ⚠️ 직원은 아무것도 안 합니다. 앱을 열면 번호가 알아서 붙습니다.
+//     이름은 사장님이 나중에 「폰 목록」 화면에서 붙입니다.
+//     로그인을 안 만든 이유 — 나이드신 분께 로그인 화면은 그 자체가 벽입니다.
+//
+//  ⚠️ 폰 브라우저 데이터를 지우면 번호가 새로 생깁니다.
+//     그러면 사장님 화면에 낯선 폰이 하나 뜹니다. 이름을 다시 붙이면 됩니다.
+// ══════════════════════════════════════════════════════════
+const 폰번호 = (function () {
+  try {
+    let id = localStorage.getItem('phoneId');
+    if (!id) {
+      id = Math.random().toString(36).slice(2, 6);
+      localStorage.setItem('phoneId', id);
+    }
+    return id;
+  } catch (e) {
+    return 'temp';   // 저장을 못 해도 앱은 돌아야 합니다
+  }
+})();
+
+// 기종 — 사장님이 이름을 붙일 때 보는 단서입니다 (「아이폰이면 어머니」)
+const 폰기종 = (function () {
+  const ua = navigator.userAgent || '';
+  if (/iPhone/i.test(ua))  return 'iPhone';
+  if (/iPad/i.test(ua))    return 'iPad';
+  if (/SM-|Galaxy/i.test(ua)) return 'Galaxy';
+  if (/Android/i.test(ua)) return 'Android';
+  if (/Macintosh/i.test(ua)) return 'Mac';
+  if (/Windows/i.test(ua)) return 'Windows';
+  return '기타';
+})();
+
+// 체크 상태는 이 폰에 먼저 저장하고, 서버로는 뒤에서 올립니다.
 // 새로고침해도 오늘 하루 동안은 유지되도록 localStorage에 저장해둔다.
 const LOCAL_KEY = 'closingChecklist_' + TODAY.key;
 function loadLocalState() {
@@ -504,6 +543,124 @@ function postAction(payload) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
+}
+
+// ══════════════════════════════════════════════════════════
+//  체크 공유 (2026-09-22 추가)
+//
+//  ⚠️ 여기서 지켜야 하는 규칙이 딱 하나 있습니다.
+//
+//      화면은 절대 서버를 기다리지 않는다.
+//
+//     예전에 공유를 넣었다가 뺀 이유가 이것입니다. 체크할 때마다 서버 답을
+//     기다리게 만들면 항목마다 1~3초씩 멈춥니다. 마감 항목이 50개가 넘습니다.
+//     사장님 말로 「주춤거린다」— 그러면 아무도 안 씁니다.
+//
+//     그래서 순서가 이렇습니다.
+//       ① 화면을 먼저 바꾼다        0초
+//       ② 이 폰에 저장한다          0초
+//       ③ 올릴 것을 줄 세워둔다     0초
+//       ④ 1.5초 쉬었다가 모아서 보낸다 — 답은 안 기다립니다
+//
+//  ⚠️ postAction 은 no-cors 라 답장을 아예 안 읽습니다. 그래서 0초입니다.
+//     대신 성공했는지 모릅니다 — 그래서 실패해도 줄에 남겨두고 다음에 또 보냅니다.
+// ══════════════════════════════════════════════════════════
+let 올릴줄    = {};      // { 항목id: {id, checked, at} }  — 같은 항목은 마지막 것만
+let 올리기타이머 = null;
+let 폰이름표   = {};      // { 폰번호: '어머니' }
+
+function 올리기예약_(id, checked) {
+  올릴줄[id] = { id: id, checked: checked, at: nowHHMM() };
+  try { localStorage.setItem('checkQueue', JSON.stringify(올릴줄)); } catch (e) {}
+
+  clearTimeout(올리기타이머);
+  올리기타이머 = setTimeout(올리기_, 1500);
+}
+
+function 올리기_() {
+  const items = Object.keys(올릴줄).map(function (k) { return 올릴줄[k]; });
+  if (!items.length) return;
+
+  // ⚠️ 보내기 전에 줄을 비웁니다. 보내는 사이에 새로 누른 것이 섞이면 안 됩니다.
+  올릴줄 = {};
+  try { localStorage.removeItem('checkQueue'); } catch (e) {}
+
+  postAction({
+    action: 'checks',
+    date  : TODAY.key,
+    mode  : MODE,
+    branch: BRANCH,
+    device: 폰번호,
+    ua    : 폰기종,
+    items : items,
+  }).catch(function () {
+    // ⚠️ 못 보냈으면 줄에 도로 넣습니다. 그 사이 새로 누른 것이 이깁니다.
+    items.forEach(function (it) { if (!올릴줄[it.id]) 올릴줄[it.id] = it; });
+    try { localStorage.setItem('checkQueue', JSON.stringify(올릴줄)); } catch (e) {}
+  });
+}
+
+// 앱을 껐다 켰을 때 못 보낸 것이 있으면 이어서 보냅니다
+function 밀린것보내기_() {
+  try {
+    const raw = localStorage.getItem('checkQueue');
+    if (!raw) return;
+    올릴줄 = JSON.parse(raw) || {};
+    if (Object.keys(올릴줄).length) setTimeout(올리기_, 2000);
+  } catch (e) {}
+}
+
+// ── 다른 폰이 한 것 받아오기 ──────────────────────────────
+//    ⚠️ 화면이 보일 때만 돕니다. 주머니 속에서 20초마다 부르면 배터리만 먹습니다.
+let 받기타이머 = null;
+
+function 받기시작_() {
+  clearInterval(받기타이머);
+  받기타이머 = setInterval(function () {
+    if (document.visibilityState === 'visible') 받아오기_();
+  }, 20000);
+}
+
+function 받아오기_() {
+  jsonp({ action: 'checks', date: TODAY.key, mode: MODE, branch: BRANCH })
+    .then(function (res) {
+      if (!res || !res.ok) return;
+      폰이름표 = res.names || {};
+      합치기_(res.checks || {});
+    })
+    .catch(function () { /* 못 받아도 내 화면은 그대로 씁니다 */ });
+}
+
+// ── 합치기 ───────────────────────────────────────────────
+//    ⚠️ 규칙: 내가 방금 누른 것은 서버 것보다 세다.
+//       아직 못 올린 줄에 있는 항목은 서버 값으로 덮지 않습니다.
+//       안 그러면 눌렀는데 도로 풀리는 것처럼 보입니다.
+function 합치기_(서버체크) {
+  const 상태 = (MODE === 'open') ? openState : currentState;
+  let 바뀜 = false;
+
+  Object.keys(서버체크).forEach(function (id) {
+    if (올릴줄[id]) return;                      // 내가 방금 누른 것 — 건드리지 않습니다
+    const 서버 = 서버체크[id];
+    const 내것 = 상태.checks[id];
+    if (내것 && !!내것.checked === !!서버.checked) {
+      if (!내것.by && 서버.device) { 내것.by = 서버.device; 바뀜 = true; }
+      return;
+    }
+    상태.checks[id] = { checked: !!서버.checked, at: 서버.at || '', by: 서버.device || '' };
+    바뀜 = true;
+  });
+
+  if (!바뀜) return;
+  if (MODE === 'open') saveOpenState(); else saveLocalState();
+  renderState();
+}
+
+// 「누가 했나」를 한 마디로 — 이름이 붙어 있으면 이름, 아니면 폰 번호
+function 누가_(by) {
+  if (!by) return '';
+  if (by === 폰번호) return '';                  // 내가 한 건 굳이 안 적습니다
+  return 폰이름표[by] || by;
 }
 
 // ── 렌더링 ────────────────────────────────────────────
@@ -641,9 +798,11 @@ function openRequiredItems() {
 function onToggleOpen(item) {
   if (openState.completed) return;
   const c = openState.checks[item.id];
-  openState.checks[item.id] = { checked: !(c && c.checked), at: nowHHMM() };
+  const next = !(c && c.checked);
+  openState.checks[item.id] = { checked: next, at: nowHHMM(), by: 폰번호 };
   saveOpenState();
   renderState();
+  올리기예약_(item.id, next);
 }
 
 function renderState() {
@@ -728,7 +887,16 @@ function applyItemVisual(id, isChecked, c) {
   if (row) {
     row.classList.toggle('checked', isChecked);
     if (chk) chk.textContent = isChecked ? '✓' : '';
-    if (meta) meta.textContent = isChecked && c && c.at ? c.at : '';
+    // ⚠️ 다른 폰이 한 것만 이름을 붙입니다. 내가 한 건 시각만 — 화면이 시끄러워집니다.
+    if (meta) {
+      let 글 = '';
+      if (isChecked && c && c.at) {
+        글 = c.at;
+        const 사람 = 누가_(c.by);
+        if (사람) 글 += ' · ' + 사람;
+      }
+      meta.textContent = 글;
+    }
   }
   if (chip) chip.classList.toggle('on', isChecked);
 }
@@ -769,15 +937,18 @@ function nowHHMM() {
   return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
 }
 
-// ── 이벤트 핸들러 (필수 마감 체크는 전부 이 폰 안에서만 처리, 서버 호출 없음) ──
+// ── 이벤트 핸들러 ────────────────────────────────────────
+//    ⚠️ 순서를 바꾸지 마세요. 화면 → 저장 → 올리기 예약 입니다.
+//       올리기를 먼저 하거나 기다리면 그 순간 주춤거리기 시작합니다.
 function onToggle(item) {
   if (currentState.completed) return;
   const c = currentState.checks[item.id];
   const nextChecked = !(c && c.checked);
 
-  currentState.checks[item.id] = { checked: nextChecked, at: nowHHMM() };
+  currentState.checks[item.id] = { checked: nextChecked, at: nowHHMM(), by: 폰번호 };
   saveLocalState();
-  renderState();
+  renderState();          // 화면 먼저
+  올리기예약_(item.id, nextChecked);   // 올리기는 뒤에서 (답을 안 기다립니다)
 }
 
 function onToggleGroup(group) {
@@ -787,7 +958,8 @@ function onToggleGroup(group) {
   const at = nowHHMM();
 
   group.items.forEach(it => {
-    currentState.checks[it.id] = { checked: nextChecked, at: at };
+    currentState.checks[it.id] = { checked: nextChecked, at: at, by: 폰번호 };
+    올리기예약_(it.id, nextChecked);
   });
   saveLocalState();
   renderState();
@@ -1037,6 +1209,16 @@ if (MODE === 'open' && openState.completed) show('s-done');
 loadMonthlyState();
 loadCarryover();
 setInterval(loadMonthlyState, 30000);
+
+// ── 체크 공유 시작 (2026-09-22) ──────────────────────────
+밀린것보내기_();     // 지난번에 못 올린 것이 있으면 이어서
+받아오기_();         // 다른 폰이 해둔 것을 먼저 한 번
+받기시작_();         // 그 뒤로 20초마다 (화면이 보일 때만)
+
+// 주머니에 넣었다 다시 꺼냈을 때 바로 맞춰줍니다
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'visible') 받아오기_();
+});
 </script>
 
 
@@ -1047,7 +1229,7 @@ setInterval(loadMonthlyState, 30000);
   <span><span class="rb-text">최신화</span><br><span class="rb-ver">v2026-08-22a</span></span>
 </div>
 <script>
-const APP_VERSION = '2026-08-22a';
+const APP_VERSION = '2026-09-22a';
 document.getElementById('refresh-btn').addEventListener('click', function () {
   if (!confirm('최신 화면으로 다시 받아올까요?\n지금 버전 v' + APP_VERSION)) return;
   // 주소 뒤에 시각을 붙이면 폰이 저장해둔 화면을 못 쓰고 새로 받는다
