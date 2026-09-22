@@ -114,6 +114,49 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun 
 .loading-text{font-size:15px;color:#636366}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* ── v2: 상단 탭 · 줄마다 버튼 (2026-09-22) ── */
+.ctabs{display:flex;gap:6px;margin:16px 0 14px}
+.ctab{flex:1;padding:10px 0;text-align:center;border-radius:12px;border:1.5px solid #e0e0e0;background:#fff;font-size:13px;font-weight:600;color:#8e8e93;cursor:pointer;user-select:none}
+.ctab.on{background:#1c1c1e;border-color:#1c1c1e;color:#fff}
+.ctab .cc{display:block;font-size:10.5px;font-weight:700;margin-top:1px;opacity:.75}
+.cpane{display:none}.cpane.on{display:block}
+
+.task-btns{display:flex;gap:5px;flex-shrink:0}
+.tb{width:32px;height:30px;border-radius:9px;border:1.5px solid #e5e5ea;background:#fafafa;color:#c7c7cc;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none}
+.tb:active{transform:scale(.9)}
+.tb-q{border-color:#dbeafe;background:#eff6ff;color:#2563eb}
+.tb-m.on{border-color:#f59e0b;background:#fef3c7;color:#b45309}
+.tb-c.on{border-color:#3b82f6;background:#dbeafe;color:#1d4ed8}
+.task-row.put .task-label{color:#b45309;text-decoration:line-through;opacity:.75}
+
+/* 그룹 안 낱개 칩 — 이제 하나씩 눌립니다 */
+.chip-row{display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid #f2f2f7}
+.chip-row:last-child{border:none}
+.chip-box{width:20px;height:20px;border-radius:6px;border:2px solid #d1d1d6;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;cursor:pointer}
+.chip-row.on .chip-box{background:#7c3aed;border-color:#7c3aed}
+.chip-name{flex:1;min-width:0;font-size:14px;font-weight:600;color:#636366;cursor:pointer}
+.chip-row.on .chip-name{color:#5b21b6}
+.chip-row.put .chip-name{color:#b45309;text-decoration:line-through;opacity:.75}
+.chip-at{font-size:11px;color:#c7c7cc}
+
+/* 담긴 발주 */
+.cart-card{margin:18px 0 6px;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:14px;padding:13px}
+.cart-h{font-size:13px;font-weight:800;color:#1d4ed8;margin-bottom:8px;display:flex;justify-content:space-between}
+.cart-l{font-size:12.5px;color:#1e40af;line-height:1.75}
+.cart-f{font-size:11px;color:#3b82f6;margin-top:7px}
+
+/* 안내 모달 */
+.info-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:700;align-items:center;justify-content:center;padding:24px}
+.info-ov.show{display:flex}
+.info-box{background:#fff;border-radius:18px;padding:20px;max-width:380px;width:100%;max-height:70vh;overflow-y:auto}
+.info-t{font-size:17px;font-weight:800;margin-bottom:10px}
+.info-b{font-size:14px;color:#3a3a3c;line-height:1.7;white-space:pre-wrap}
+.info-b.none{color:#8e8e93}
+.info-x{width:100%;margin-top:16px;padding:13px;border-radius:12px;border:none;background:#1c1c1e;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+.pick{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.pick div{padding:13px;border-radius:12px;border:1.5px solid #e5e5ea;background:#fafafa;font-size:14.5px;font-weight:600;cursor:pointer}
+.pick div:active{background:#eff6ff;border-color:#3b82f6}
+
 /* ── 오픈/마감 전환 ── */
 .mode-tabs{display:flex;gap:8px;margin:14px 0 4px}
 .mode-tab{flex:1;padding:12px 0;text-align:center;border-radius:14px;border:1.5px solid #e0e0e0;background:#fff;font-size:15px;font-weight:600;color:#8e8e93;cursor:pointer;transition:all .12s}
@@ -195,27 +238,43 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun 
 
     <!-- ── 마감 ── -->
     <div id="mode-close">
-      <!-- ⚠️ 2026-09-20 — 마감을 22시쯤부터 시작하니, 「이건 내일」 하는 판단도 그때 납니다.
-           00시 완료 직전에만 고르게 해두면 그때쯤 까먹습니다. 그래서 언제든 미리 고를 수 있게. -->
-      <button class="carry-pre-btn" onclick="openCarryPre()">
-        🔁 내일로 넘길 것 미리 고르기<span id="carry-pre-count"></span>
-      </button>
+      <!-- ⚠️ 2026-09-22 — 「미리 고르기」 버튼을 없앴습니다.
+           사장님 말: 「내일로 미룰 것을 따로 빼지 않고, 물음표 옆에 미루는 것을 체크하게끔.
+                      보고 바로 할 수 있게끔」
+           이제 줄마다 🔁 가 있습니다. -->
 
-      <div class="sec-title">✅ 필수 마감 · 채우기</div>
-      <div id="fillList"></div>
+      <!-- ⚠️ 2026-09-22 — 탭으로 나눴습니다.
+           그전에는 채우기·청소·마지막·월간을 쭉 드래그해서 내려야 했습니다.
+           사장님 말: 「상단 탭으로 만들어서 클릭해서 밑으로 나오게끔 하자」 -->
+      <div class="ctabs">
+        <div class="ctab on" id="ct-fill"  onclick="탭_('fill')">채우기<span class="cc" id="cc-fill">0/0</span></div>
+        <div class="ctab"    id="ct-clean" onclick="탭_('clean')">청소<span class="cc" id="cc-clean">0/0</span></div>
+        <div class="ctab"    id="ct-final" onclick="탭_('final')">마지막<span class="cc" id="cc-final">0/0</span></div>
+        <div class="ctab"    id="ct-etc"   onclick="탭_('etc')">정기<span class="cc" id="cc-etc">0/0</span></div>
+      </div>
 
-      <div class="sec-title">🧹 청소</div>
-      <div id="cleanList"></div>
+      <div class="cpane on" id="cp-fill">
+        <div id="fillList"></div>
+        <!-- 담긴 발주 — 다른 사람이 담은 것도 여기 보입니다 -->
+        <div id="cart-card" class="cart-card" style="display:none"></div>
+      </div>
 
-      <div class="sec-title" id="weeklyTitle" style="display:none">🗓️ 정기 청소 (이번주)</div>
-      <div id="weeklyList"></div>
+      <div class="cpane" id="cp-clean">
+        <div id="cleanList"></div>
+      </div>
 
-      <div class="sec-title extra">🔒 마지막 확인</div>
-      <div id="finalList"></div>
+      <div class="cpane" id="cp-final">
+        <div id="finalList"></div>
+      </div>
 
-      <div class="sec-title monthly">📅 월간 청소 (한 달에 한 번)</div>
-      <div class="sec-note">체크 안 해도 오늘 마감은 완료할 수 있어요. 이번 달에 한 번만 하면 됩니다.</div>
-      <div id="monthlyList"></div>
+      <div class="cpane" id="cp-etc">
+        <div class="sec-title" id="weeklyTitle" style="display:none">🗓️ 정기 청소 (이번주)</div>
+        <div id="weeklyList"></div>
+
+        <div class="sec-title monthly">📅 월간 청소 (한 달에 한 번)</div>
+        <div class="sec-note">체크 안 해도 오늘 마감은 완료할 수 있어요. 이번 달에 한 번만 하면 됩니다.</div>
+        <div id="monthlyList"></div>
+      </div>
     </div>
 
     <div class="progress-wrap">
@@ -228,6 +287,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun 
     <div class="inner">
       <button class="submit-btn" id="completeBtn">전부 체크하면 완료할 수 있어요</button>
     </div>
+  </div>
+</div>
+
+<!-- ❓ 기준·방법 · 🛒 고르기 (2026-09-22) -->
+<div class="info-ov" id="info-ov" onclick="if(event.target.id==='info-ov')정보닫기_()">
+  <div class="info-box">
+    <div class="info-t" id="info-t"></div>
+    <div class="info-b" id="info-b"></div>
+    <div class="pick" id="info-pick"></div>
+    <button class="info-x" onclick="정보닫기_()">닫기</button>
   </div>
 </div>
 
@@ -276,6 +345,59 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbxeauYyGzxWMcPSrpHAidBA
 
 // ── 체크리스트 항목 (Code.gs와 동일하게 유지) ──────────
 // 아코디언(그룹) 항목을 먼저, 낱개 항목을 뒤에 배치
+// ══════════════════════════════════════════════════════════
+//  마감 항목 → 식자재 발주  (2026-09-22)
+//
+//  🛒 를 누르면 발주앱 바구니에 담깁니다. 이름이 서로 다릅니다.
+//      마감 「다진고추」  →  발주 「고추」(미락)
+//      마감 「묵은지」    →  발주 「포기김치」(미락)
+//
+//  ⚠️ 대파는 세 자리에서 옵니다. 하나씩 1개, 대파김치만 5개입니다.
+//     사장님 말: 「라면용대파, 대파김치를 체크했다? = 대파 6개」
+//     서버가 출처를 따로 세어 합쳐줍니다.
+//
+//  ⚠️ 여기 없는 항목에는 🛒 가 안 뜹니다 (천엽·고기정리처럼 발주할 게 아닌 것).
+// ══════════════════════════════════════════════════════════
+const 발주표 = {
+  gs1 : [['사장님','국수소스',1]],   gs2 : [['사장님','파장소스',1]],
+  gs3 : [['네이버','들기름',1]],     f_ramen: [['미락','라면',1]],
+  f_fruit: [['네이버','과일',1]],
+  gl1 : [['미락','대파',1]],         gl2 : [['미락','고추',1]],
+  gl3 : [['미락','대파',1]],         gl4 : [['미락','배추',1]],
+  gl5 : [['미락','대파',1]],         gl6 : [['네이버','단무지',1]],
+  gl7 : [['사장님','다대기',1]],      gl8 : [['미락','마늘',1]],
+  gl9 : [['미락','포기김치',1]],      gl10: [['네이버','미나리',1]],
+  gr2 : [['미락','대파',5]],          // ⚠️ 대파김치만 5개입니다
+  gr3 : [['미락','다진김치',1]],      gr4 : [['원당','깍두기',1]],
+  g6_2: [['미락','고추',1]],          g6_3: [['콩나물','콩나물',1]],
+  g6_4: [['네이버','레몬',1]],        g6_5: [['네이버','오이',1]],
+  gm2 : [['미락','양파',1]],          gm3 : [['네이버','떡',1]],
+  f_fireshow: [['원당','불쇼술',1]],  f_grape: [['네이버','청포도',1]],
+  f_gammi: [['사장님','감미',1]],     f_tissue: [['네이버','냅킨',1]],
+  // ⚠️ 이 줄 하나가 두 업체로 갑니다. 누르면 어느 것을 담을지 고르게 합니다.
+  f_powder: [['미락','고추가루',1], ['네이버','다시다',1]],
+};
+
+// ⚠️ 발주앱과 같은 주소입니다. 마감 GAS 가 아니라 발주 GAS 로 보냅니다.
+const 발주_GAS = 'https://script.google.com/macros/s/AKfycbw97e3tDmVYUG4_cDiKQrkNuRhWAJFiUrMQuATAzfy0WEAZwhAPdMryzY-Oa8TGJe2-cg/exec';
+
+// ══════════════════════════════════════════════════════════
+//  ❓ 기준·방법  (2026-09-22)
+//
+//  사장님이 고르신 여덟 곳입니다. 내용은 아직 안 채웠습니다.
+//  ⚠️ 빈 칸으로 두면 직원이 눌러보고 실망합니다. 그래서 「아직 안 적었다」고 솔직히 띄웁니다.
+// ══════════════════════════════════════════════════════════
+const 기준표 = {
+  gl8      : '',   // 다진마늘
+  gl9      : '',   // 묵은지
+  gr1      : '',   // 천엽
+  gm3      : '',   // 떡
+  f_pajang : '',   // 파장 만들기
+  f_broth  : '',   // 육수 확인
+  c3       : '',   // 화구 라인 청소
+  c2       : '',   // 술박스 정리하기
+};
+
 const FILL_SEQUENCE = [
   { type: 'group', id: 'g_sauce', label: '소스류', items: [
     { id: 'gs1', label: '국수소스' },
@@ -663,6 +785,223 @@ function 누가_(by) {
   return 폰이름표[by] || by;
 }
 
+// ══════════════════════════════════════════════════════════
+//  v2 — 탭 · 낱개 체크 · ❓ · 🔁 · 🛒   (2026-09-22)
+// ══════════════════════════════════════════════════════════
+
+let 담긴항목 = {};    // { 마감항목id: true }  — 발주 바구니에 들어간 것
+
+// ── 탭 ──────────────────────────────────────────────────
+let 지금탭 = 'fill';
+function 탭_(이름) {
+  지금탭 = 이름;
+  ['fill','clean','final','etc'].forEach(function (k) {
+    document.getElementById('ct-' + k).classList.toggle('on', k === 이름);
+    document.getElementById('cp-' + k).classList.toggle('on', k === 이름);
+  });
+  window.scrollTo(0, 0);
+}
+
+function 탭숫자_() {
+  const 셈 = function (list) {
+    let d = 0;
+    list.forEach(function (it) {
+      if (currentState.checks[it.id] && currentState.checks[it.id].checked) d++;
+    });
+    return d + '/' + list.length;
+  };
+  const 채우기 = [];
+  FILL_SEQUENCE.forEach(function (e) {
+    if (e.type === 'group') 채우기.push.apply(채우기, e.items);
+    else 채우기.push(e);
+  });
+  const 정기 = IS_MONDAY ? WEEKLY_ITEMS : [];
+  document.getElementById('cc-fill').textContent  = 셈(채우기);
+  document.getElementById('cc-clean').textContent = 셈(CLEAN_ITEMS);
+  document.getElementById('cc-final').textContent = 셈(FINAL_ITEMS);
+  document.getElementById('cc-etc').textContent   = 정기.length ? 셈(정기) : '–';
+}
+
+// ── 낱개 체크 ────────────────────────────────────────────
+//    ⚠️ 그룹 안 품목을 하나씩 누릅니다. 예전처럼 한 번에 다 켜지지 않습니다.
+function 낱개토글_(id) {
+  let 찾음 = null;
+  FILL_SEQUENCE.forEach(function (e) {
+    if (e.type !== 'group') return;
+    e.items.forEach(function (it) { if (it.id === id) 찾음 = it; });
+  });
+  if (찾음) onToggle(찾음);
+}
+
+// ── 🔁 내일로 미루기 ─────────────────────────────────────
+//    사장님 말: 「내일로 미룰 것을 따로 빼지 않고, 물음표 옆에 미루는 것을 체크하게끔」
+//    ⚠️ 미룬다고 체크가 풀리지는 않습니다. 「오늘 안 함」 표시일 뿐입니다.
+function 미루기_(e, id) {
+  e.stopPropagation();          // 줄 전체가 체크되지 않게
+  if (carryPicked[id]) delete carryPicked[id];
+  else {
+    const it = 항목찾기_(id);
+    carryPicked[id] = it ? (it.label || id) : id;
+  }
+  saveCarryLocal();
+  renderState();
+}
+
+function 항목찾기_(id) {
+  let 결과 = null;
+  FILL_SEQUENCE.forEach(function (e) {
+    if (e.type === 'group') e.items.forEach(function (it) { if (it.id === id) 결과 = it; });
+    else if (e.id === id) 결과 = e;
+  });
+  [CLEAN_ITEMS, WEEKLY_ITEMS, FINAL_ITEMS, OPEN_ITEMS].forEach(function (list) {
+    list.forEach(function (it) { if (it.id === id) 결과 = it; });
+  });
+  return 결과;
+}
+
+// ── ❓ 기준·방법 ────────────────────────────────────────
+function 기준보기_(e, id) {
+  e.stopPropagation();
+  const it = 항목찾기_(id);
+  const 글 = 기준표[id];
+  document.getElementById('info-t').textContent = (it ? it.label : id);
+  const b = document.getElementById('info-b');
+  if (글) { b.textContent = 글; b.className = 'info-b'; }
+  else {
+    // ⚠️ 빈 칸으로 두면 눌러보고 실망합니다. 솔직히 알립니다.
+    b.textContent = '아직 안 적었습니다.\n\n사장님이 기준을 알려주시면 여기 넣겠습니다.';
+    b.className = 'info-b none';
+  }
+  document.getElementById('info-pick').innerHTML = '';
+  document.getElementById('info-ov').classList.add('show');
+}
+
+function 정보닫기_() { document.getElementById('info-ov').classList.remove('show'); }
+
+// ── 🛒 발주 담기 ────────────────────────────────────────
+//
+//  ⚠️ 여기가 핵심입니다. 사장님 말:
+//     「마감체크리스트에서 인원들이 체크를 하다가 발주버튼을 클릭시 각각 해서
+//       총 2번씩 발주가 쌓이면 문제가 되니 이 부분만 문제가 없게끔」
+//
+//  그래서 발주는 서버(발주 바구니)에 모읍니다. 다른 사람이 이미 담았으면
+//  🛒 가 파랗게 켜져 있어서 또 누를 일이 없고, 눌러도 같은 자리라 안 쌓입니다.
+function 발주담기_(e, id) {
+  e.stopPropagation();
+  const 목록 = 발주표[id];
+  if (!목록) return;
+
+  // ⚠️ 한 줄이 두 업체로 가는 경우 (고춧가루·다시다) — 고르게 합니다
+  if (목록.length > 1 && !담긴항목[id]) {
+    const it = 항목찾기_(id);
+    document.getElementById('info-t').textContent = (it ? it.label : id);
+    document.getElementById('info-b').textContent = '무엇이 떨어졌습니까?';
+    document.getElementById('info-b').className = 'info-b';
+    document.getElementById('info-pick').innerHTML = 목록.map(function (m, i) {
+      return '<div onclick="한개담기_(\'' + id + '\',' + i + ')">' + m[1] + ' <span style="color:#8e8e93">· ' + m[0] + '</span></div>';
+    }).join('') +
+      '<div onclick="모두담기_(\'' + id + '\')">둘 다</div>';
+    document.getElementById('info-ov').classList.add('show');
+    return;
+  }
+
+  if (담긴항목[id]) 발주빼기_(id, 목록);
+  else              발주보내기_(id, 목록);
+}
+
+function 한개담기_(id, i) {
+  정보닫기_();
+  발주보내기_(id, [발주표[id][i]]);
+}
+function 모두담기_(id) {
+  정보닫기_();
+  발주보내기_(id, 발주표[id]);
+}
+
+function 발주보내기_(id, 목록) {
+  담긴항목[id] = 목록;        // 화면 먼저
+  renderState();
+  바구니그리기_();
+  발주POST_('cart_add', 목록.map(function (m) {
+    return { supplier: m[0], item: m[1], qty: String(m[2]), src: id };
+  }));
+  setTimeout(바구니읽기_, 1500);
+}
+
+function 발주빼기_(id, 목록) {
+  const 뺄것 = 담긴항목[id] || 목록;
+  delete 담긴항목[id];
+  renderState();
+  바구니그리기_();
+  발주POST_('cart_remove', 뺄것.map(function (m) {
+    return { supplier: m[0], item: m[1], src: id };
+  }));
+  setTimeout(바구니읽기_, 1500);
+}
+
+// ⚠️ 마감 GAS 가 아니라 발주 GAS 로 보냅니다. no-cors 라 답장은 안 읽습니다.
+function 발주POST_(type, items) {
+  try {
+    fetch(발주_GAS, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ type: type, device: 폰번호, items: items }),
+    }).catch(function () {});
+  } catch (e) {}
+}
+
+// ── 바구니 읽어오기 ─────────────────────────────────────
+//    ⚠️ 다른 사람이 담은 것도 가져옵니다. 그래야 또 안 담습니다.
+function 바구니읽기_() {
+  const cb = 'cbc_' + Date.now() + '_' + Math.floor(Math.random() * 1e6);
+  const s  = document.createElement('script');
+  const t  = setTimeout(function () { 정리(); }, 12000);
+  function 정리() { clearTimeout(t); delete window[cb]; if (s.parentNode) s.parentNode.removeChild(s); }
+  window[cb] = function (res) {
+    정리();
+    if (!res || !res.ok) return;
+    바구니목록 = res.items || [];
+    담긴항목 = {};
+    바구니목록.forEach(function (b) {
+      if (b.src) 담긴항목[b.src] = 담긴항목[b.src] || [];
+      if (b.src) 담긴항목[b.src].push([b.supplier, b.item, b.qty]);
+    });
+    renderState();
+    바구니그리기_();
+  };
+  s.src = 발주_GAS + '?action=cart&callback=' + cb;
+  s.onerror = 정리;
+  document.body.appendChild(s);
+}
+
+let 바구니목록 = [];
+
+function 바구니그리기_() {
+  const box = document.getElementById('cart-card');
+  if (!box) return;
+  if (!바구니목록.length) { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+
+  // 업체별로 묶고 같은 품목은 합칩니다 (대파처럼 여러 자리에서 오는 것)
+  const 업체별 = {};
+  바구니목록.forEach(function (b) {
+    if (!업체별[b.supplier]) 업체별[b.supplier] = {};
+    const n = parseFloat(b.qty);
+    업체별[b.supplier][b.item] = (업체별[b.supplier][b.item] || 0) + (isFinite(n) ? n : 0);
+  });
+
+  box.innerHTML =
+    '<div class="cart-h"><span>🛒 발주에 담긴 것</span><span>' + 바구니목록.length + '건</span></div>' +
+    '<div class="cart-l">' +
+    Object.keys(업체별).map(function (s) {
+      return '<b>' + s + '</b> · ' + Object.keys(업체별[s]).map(function (i) {
+        return i + (업체별[s][i] > 0 ? ' ' + 업체별[s][i] : '');
+      }).join(', ');
+    }).join('<br>') +
+    '</div>' +
+    '<div class="cart-f">⏰ 미락 22:25 · 나머지 00:25 에 자동으로 나갑니다</div>';
+}
+
 // ── 렌더링 ────────────────────────────────────────────
 function taskRowHtml(item, extraClass) {
   return `
@@ -672,7 +1011,24 @@ function taskRowHtml(item, extraClass) {
         <div class="task-label">${item.label}</div>
         <div class="task-meta" id="meta-${item.id}"></div>
       </div>
+      ${버튼들_(item)}
     </div>`;
+}
+
+// ── 줄마다 붙는 버튼 (2026-09-22) ────────────────────────
+//    ❓ 기준·방법    있는 항목만
+//    🔁 내일로       모든 항목
+//    🛒 발주 담기    발주표에 있는 항목만
+//
+//    ⚠️ 없는 버튼은 아예 안 만듭니다. 회색으로 두면 눌러보고 아무 일도 안 일어납니다.
+function 버튼들_(item) {
+  const b = [];
+  if (기준표[item.id] !== undefined)
+    b.push(`<div class="tb tb-q" onclick="기준보기_(event,'${item.id}')">?</div>`);
+  b.push(`<div class="tb tb-m" id="tbm-${item.id}" onclick="미루기_(event,'${item.id}')">🔁</div>`);
+  if (발주표[item.id])
+    b.push(`<div class="tb tb-c" id="tbc-${item.id}" onclick="발주담기_(event,'${item.id}')">🛒</div>`);
+  return `<div class="task-btns">${b.join('')}</div>`;
 }
 
 function groupCardHtml(group) {
@@ -689,9 +1045,13 @@ function groupCardHtml(group) {
         </span>
       </div>
       <div class="group-body" id="gbody-${group.id}">
-        <div class="check-row">
-          ${group.items.map(it => `<div class="check-chip" id="chip-${it.id}" data-id="${it.id}">${it.label}</div>`).join('')}
-        </div>
+        ${group.items.map(it => `
+          <div class="chip-row" id="chip-${it.id}" data-id="${it.id}">
+            <div class="chip-box" onclick="낱개토글_('${it.id}')"></div>
+            <div class="chip-name" onclick="낱개토글_('${it.id}')">${it.label}</div>
+            <span class="chip-at" id="chipat-${it.id}"></span>
+            ${버튼들_(it)}
+          </div>`).join('')}
       </div>
     </div>`;
 }
@@ -731,13 +1091,18 @@ function renderShell() {
   });
 
   // 이벤트 연결: 그룹 (헤더 체크 = 전체 일괄 체크/해제, 화살표 = 펼치기만)
+  // ⚠️ 2026-09-22 — 그룹 헤더를 눌러도 이제 전부 체크되지 않습니다.
+  //    사장님 말: 「아코디언 형식으로 큰 목록을 체크하면 전부 체크하게 되어 있는데
+  //               그냥 낱개로 체크할 수 있게 바꿔줘」
+  //    헤더는 펼치기/접기만 합니다.
   FILL_SEQUENCE.filter(e => e.type === 'group').forEach(group => {
-    document.getElementById('gcheck-wrap-' + group.id).addEventListener('click', () => onToggleGroup(group));
-    document.getElementById('gright-' + group.id).addEventListener('click', () => {
+    const 펼치기 = () => {
       openGroups[group.id] = !openGroups[group.id];
       document.getElementById('gbody-' + group.id).classList.toggle('open', openGroups[group.id]);
       document.getElementById('garrow-' + group.id).textContent = openGroups[group.id] ? '▴' : '▾';
-    });
+    };
+    document.getElementById('gcheck-wrap-' + group.id).addEventListener('click', 펼치기);
+    document.getElementById('gright-' + group.id).addEventListener('click', 펼치기);
   });
 
   // 이벤트 연결: 월간 항목
@@ -823,6 +1188,7 @@ function renderState() {
     const badge = document.getElementById('gcount-' + group.id);
     badge.textContent = `${doneCount}/${group.items.length}`;
     badge.classList.toggle('done', allDone);
+    // ⚠️ 이건 「다 했다」는 표시일 뿐입니다. 눌러도 일괄 체크되지 않습니다.
     const gchk = document.getElementById('gcheck-' + group.id);
     gchk.textContent = allDone ? '✓' : '';
     gchk.classList.toggle('gchecked', allDone);
@@ -841,6 +1207,7 @@ function renderState() {
   btn.disabled = currentState.completed;
 
   document.getElementById('sync-note').textContent = currentState.completed ? '✅ 완료됨' : '';
+  탭숫자_();
 
   if (currentState.completed) {
     document.getElementById('done-sub').textContent = `${TODAY.label} · ${currentState.completedAt || ''} 완료`;
@@ -884,6 +1251,26 @@ function applyItemVisual(id, isChecked, c) {
   const chip = document.getElementById('chip-' + id);
   const chk = document.getElementById('chk-' + id);
   const meta = document.getElementById('meta-' + id);
+
+  // ── 🔁 내일로 · 🛒 담김 표시 (2026-09-22) ──────────
+  const 미룸 = !!carryPicked[id];
+  const mb = document.getElementById('tbm-' + id);
+  if (mb) mb.classList.toggle('on', 미룸);
+  const cb = document.getElementById('tbc-' + id);
+  if (cb) cb.classList.toggle('on', !!담긴항목[id]);
+  if (row)  row.classList.toggle('put', 미룸);
+  if (chip) chip.classList.toggle('put', 미룸);
+
+  // 그룹 안 낱개 칩
+  if (chip && chip.classList.contains('chip-row')) {
+    chip.classList.toggle('on', isChecked);
+    const box = chip.querySelector('.chip-box');
+    if (box) box.textContent = isChecked ? '✓' : '';
+    const at = document.getElementById('chipat-' + id);
+    if (at) at.textContent = (isChecked && c && c.at) ? c.at : '';
+    return;
+  }
+
   if (row) {
     row.classList.toggle('checked', isChecked);
     if (chk) chk.textContent = isChecked ? '✓' : '';
@@ -1225,6 +1612,18 @@ setInterval(loadMonthlyState, 30000);
 //     발주 담기(🛒)는 반대로 중복을 막아야 해서 받아와야 합니다. 그때 씁니다.
 밀린것보내기_();     // 지난번에 못 올린 것이 있으면 이어서 올립니다
 
+// ── 🛒 발주 바구니 (2026-09-22) ─────────────────────────
+//    ⚠️ 체크는 안 받아오지만 발주는 받아옵니다.
+//       체크는 각자 하는 게 낫고, 발주는 겹치면 안 되기 때문입니다.
+loadCarryLocal();
+바구니읽기_();
+setInterval(function () {
+  if (document.visibilityState === 'visible') 바구니읽기_();
+}, 30000);
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'visible') 바구니읽기_();
+});
+
 // 주머니에 넣었다 다시 꺼냈을 때 바로 맞춰줍니다
 </script>
 
@@ -1236,7 +1635,7 @@ setInterval(loadMonthlyState, 30000);
   <span><span class="rb-text">최신화</span><br><span class="rb-ver">v2026-08-22a</span></span>
 </div>
 <script>
-const APP_VERSION = '2026-09-22a';
+const APP_VERSION = '2026-09-22-v2';
 document.getElementById('refresh-btn').addEventListener('click', function () {
   if (!confirm('최신 화면으로 다시 받아올까요?\n지금 버전 v' + APP_VERSION)) return;
   // 주소 뒤에 시각을 붙이면 폰이 저장해둔 화면을 못 쓰고 새로 받는다
