@@ -1632,10 +1632,19 @@ document.addEventListener('visibilitychange', function () {
      화면 파일을 고칠 때마다 아래 APP_VERSION 도 같이 올릴 것. -->
 <div class="refresh-btn" id="refresh-btn">
   <span class="rb-icon">🔄</span>
-  <span><span class="rb-text">최신화</span><br><span class="rb-ver">v2026-08-22a</span></span>
+  <span><span class="rb-text">최신화</span><br><span class="rb-ver" id="rb-ver">v…</span></span>
 </div>
 <script>
 const APP_VERSION = '2026-09-22-v2';
+
+// ⚠️ 2026-09-22 — 버전 글자를 여기서 화면에 써넣습니다.
+//    그전에는 화면(HTML)과 코드(APP_VERSION) 두 군데에 따로 적혀 있었습니다.
+//    한쪽만 고치면 화면은 새 것인데 번호는 옛날이라 「최신화가 안 됐다」고 오해합니다.
+//    실제로 2026-09-22 에 그랬습니다. 이제 한 군데만 고치면 됩니다.
+(function () {
+  const el = document.getElementById('rb-ver');
+  if (el) el.textContent = 'v' + APP_VERSION;
+})();
 document.getElementById('refresh-btn').addEventListener('click', function () {
   if (!confirm('최신 화면으로 다시 받아올까요?\n지금 버전 v' + APP_VERSION)) return;
   // 주소 뒤에 시각을 붙이면 폰이 저장해둔 화면을 못 쓰고 새로 받는다
