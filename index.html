@@ -1112,7 +1112,10 @@ function 바구니그리기_() {
       }).join(', ');
     }).join('<br>') +
     '</div>' +
-    '<div class="cart-f">⏰ 미락 22:25 · 나머지 00:25 에 자동으로 나갑니다</div>';
+    // ⚠️ [v4.0] 2026-09-27 — 자동 발송을 껐습니다. 여기 담기는 「메모」입니다.
+    //    사장님: 「미리 장바구니에 담아놓으면 추후에 발주하는 데 도움이 되게끔만」
+    '<div class="cart-f">📥 발주앱을 열면 여기 담긴 것이 체크로 들어갑니다<br>' +
+    '⚠️ 문자는 발주앱에서 「발주하기」를 눌러야 나갑니다</div>';
 }
 
 // ── 렌더링 ────────────────────────────────────────────
@@ -1825,7 +1828,7 @@ document.addEventListener('visibilitychange', function () {
   <span><span class="rb-text">최신화</span><br><span class="rb-ver" id="rb-ver">v…</span></span>
 </div>
 <script>
-const APP_VERSION = '2026-09-22-v2b';
+const APP_VERSION = '2026-09-27-v4';
 
 // ⚠️ 2026-09-22 — 버전 글자를 여기서 화면에 써넣습니다.
 //    그전에는 화면(HTML)과 코드(APP_VERSION) 두 군데에 따로 적혀 있었습니다.
