@@ -179,6 +179,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun 
 .info-box{background:#fff;border-radius:18px;padding:20px;max-width:380px;width:100%;max-height:70vh;overflow-y:auto}
 .info-t{font-size:17px;font-weight:800;margin-bottom:10px}
 .info-b{font-size:14px;color:#3a3a3c;line-height:1.7;white-space:pre-wrap}
+/* 기준 사진 (2026-09-28) — 눌러서 크게 볼 수 있습니다 */
+.info-img{width:100%;border-radius:12px;margin-top:12px;display:block;
+  border:1px solid #e5e5ea;background:#f2f2f7}
 .info-b.none{color:#8e8e93}
 .info-x{width:100%;margin-top:16px;padding:13px;border-radius:12px;border:none;background:#1c1c1e;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
 .pick{display:flex;flex-direction:column;gap:8px;margin-top:12px}
@@ -466,7 +469,29 @@ const 발주_GAS = 'https://script.google.com/macros/s/AKfycbw97e3tDmVYUG4_cDiKQ
 //  사장님이 고르신 여덟 곳입니다. 내용은 아직 안 채웠습니다.
 //  ⚠️ 빈 칸으로 두면 직원이 눌러보고 실망합니다. 그래서 「아직 안 적었다」고 솔직히 띄웁니다.
 // ══════════════════════════════════════════════════════════
+//  ── 두 가지로 적을 수 있습니다 (2026-09-28) ──────────
+//     글만:   gl8: '다진마늘은 …'
+//     사진도: gm1: { 글: '…', 사진: ['gm1-1.jpg', 'gm1-2.jpg'] }
+//
+//  ⚠️ 사진은 기준사진/ 폴더에 넣습니다. 이름은 여기 적은 것과 똑같아야 합니다.
+//     사진이 없으면 그 자리만 조용히 비고, 글은 그대로 보입니다.
+//     ⚠️ 폰으로 보는 화면입니다. 사진은 긴 쪽 1200px 이하로 줄여서 넣으십시오.
+//        원본(4MB)을 그대로 넣으면 매장 와이파이에서 한참 안 뜹니다.
 const 기준표 = {
+  // ── 고기정리 (사장님 2026-09-28) ──────────────────
+  gm1: {
+    글: '① 먼저 쓸 것을 맨 아래에\n' +
+        '   빨리 빼야 할 곱창을 아래 칸에 넣습니다.\n' +
+        '   ⚠️ 정리를 안 해서 먼저 쓸 고기가 뒤에 숨으면 안 됩니다.\n' +
+        '      숨으면 오래된 것이 남고 새것부터 나갑니다.\n\n' +
+        '② 끝까지 밀어 넣지 마세요\n' +
+        '   ⚠️ 안쪽 냉기가 셉니다. 끝까지 넣으면 얼어버립니다.\n\n' +
+        '③ 다음날 것을 미리 나눠두기\n' +
+        '   고기 상태가 균일하지 않으니 날짜·등급별로 나눠 담습니다.\n' +
+        '   내일 영업 때 바로 꺼내 쓸 수 있게 준비해 둡니다.',
+    사진: ['gm1-1.jpg', 'gm1-2.jpg'],
+  },
+
   gl8      : '',   // 다진마늘
   gl9      : '',   // 묵은지
   gr1      : '',   // 천엽
@@ -976,7 +1001,11 @@ function 항목찾기_(id) {
 function 기준보기_(e, id) {
   e.stopPropagation();
   const it = 항목찾기_(id);
-  const 글 = 기준표[id];
+  const 것 = 기준표[id];
+  // ⚠️ 글만 적힌 것(문자열)과 사진까지 있는 것(객체) 둘 다 받습니다
+  const 글   = (것 && typeof 것 === 'object') ? (것.글 || '') : (것 || '');
+  const 사진 = (것 && typeof 것 === 'object' && 것.사진) ? 것.사진 : [];
+
   document.getElementById('info-t').textContent = (it ? it.label : id);
   const b = document.getElementById('info-b');
   if (글) { b.textContent = 글; b.className = 'info-b'; }
@@ -985,7 +1014,14 @@ function 기준보기_(e, id) {
     b.textContent = '아직 안 적었습니다.\n\n사장님이 기준을 알려주시면 여기 넣겠습니다.';
     b.className = 'info-b none';
   }
-  document.getElementById('info-pick').innerHTML = '';
+
+  // ⚠️ 사진 파일이 없으면 그 자리만 조용히 비웁니다 (onerror).
+  //    글은 그대로 보여야 합니다 — 사진 때문에 전체가 망가지면 안 됩니다.
+  document.getElementById('info-pick').innerHTML = 사진.map(function (f) {
+    return '<img class="info-img" src="기준사진/' + f + '" loading="lazy" ' +
+           'onerror="this.style.display=\'none\'" ' +
+           'onclick="window.open(this.src,\'_blank\')">';
+  }).join('');
   document.getElementById('info-ov').classList.add('show');
 }
 
@@ -1828,7 +1864,7 @@ document.addEventListener('visibilitychange', function () {
   <span><span class="rb-text">최신화</span><br><span class="rb-ver" id="rb-ver">v…</span></span>
 </div>
 <script>
-const APP_VERSION = '2026-09-27-v4';
+const APP_VERSION = '2026-09-28a';
 
 // ⚠️ 2026-09-22 — 버전 글자를 여기서 화면에 써넣습니다.
 //    그전에는 화면(HTML)과 코드(APP_VERSION) 두 군데에 따로 적혀 있었습니다.
