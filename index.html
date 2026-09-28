@@ -1746,21 +1746,20 @@ function 시재보내기_() {
 //    사장님 말: 「시재부족알림 안 옴. 크롤링 알림처럼 앱도 알림해서 보내게끔 못 해주나?」
 //    그전에는 마감 GAS 가 **메일만** 보냈습니다. 메일은 안 보게 됩니다.
 //
-//  ⚠️ 문자는 **발주 GAS** 가 보냅니다. 솔라피 열쇠가 거기에만 있기 때문입니다.
-//     열쇠를 두 곳에 두면 한쪽만 바꾸게 되고, 그게 이 프로젝트에서 계속 사고를 냈습니다.
-//     🛒 가 쓰는 길을 그대로 씁니다.
+//  ⚠️ 문자는 **마감 GAS 가 직접** 보냅니다 (Code.gs 의 시재문자_).
+//     처음에는 발주 GAS 로 보내게 만들었는데 사장님 지적이 맞았습니다 —
+//     「기능도 마감체크리스트에 있는데 왜 발주에 넣어?」
+//     마감 기능은 마감 GAS 안에서 끝나야 합니다.
 //
-//  ⚠️ 부족액(숫자)만 보냅니다. 문장은 서버가 만듭니다.
-//     그 주소는 열려 있으므로 임의 문자를 보낼 수 있게 두면 안 됩니다.
+//  ⚠️ 그래서 앱은 예전과 똑같이 postAction 하나만 보냅니다. 화면 쪽은 바뀐 게 없습니다.
 function 시재보고_(부족액) {
   postAction({
     action : 'cash',
     date   : TODAY.key,
     short  : 부족액,
     device : 폰번호,
+    branch : BRANCH,
   });
-
-  if (부족액 > 0) 발주POST_('cash_alert', null, { short: 부족액, branch: BRANCH });
 }
 
 // 시재를 마치면 곧바로 완료합니다.
@@ -2028,7 +2027,7 @@ document.addEventListener('visibilitychange', function () {
   <span><span class="rb-text">최신화</span><br><span class="rb-ver" id="rb-ver">v…</span></span>
 </div>
 <script>
-const APP_VERSION = '2026-09-29a';
+const APP_VERSION = '2026-09-29b';
 
 // ⚠️ 2026-09-22 — 버전 글자를 여기서 화면에 써넣습니다.
 //    그전에는 화면(HTML)과 코드(APP_VERSION) 두 군데에 따로 적혀 있었습니다.

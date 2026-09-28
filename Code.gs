@@ -1,6 +1,23 @@
 /**
  * 마감 체크리스트 - Google Apps Script 백엔드 (v5)
  *
+ * 🔴 이 파일은 「마감체크리스트 GAS」 것입니다 — 배포 주소 AKfycbxeauYy…
+ *    ⚠️ 발주 GAS(AKfycbw97e3t…) 와 헷갈리지 마십시오.
+ *       두 프로젝트 모두 파일 이름이 Code.gs 라 2026-09-29 에 실제로 섞였습니다.
+ *       발주 코드를 여기 붙여넣으면 마감체크리스트가 통째로 멈춥니다.
+ *
+ *    구분하는 법 — 왼쪽 함수 목록을 보십시오
+ *        saveCash · getDayStatus · saveChecks  →  여기가 맞습니다 (마감)
+ *        cartAdd · sendCartDue · cartSend      →  발주 GAS 입니다
+ *
+ * 🔑 스크립트 속성에 넣어야 하는 것 (파일 → 프로젝트 설정 → 스크립트 속성)
+ *        SOLAPI_API_KEY      솔라피 API Key
+ *        SOLAPI_API_SECRET   솔라피 API Secret
+ *        SOLAPI_SENDER       보내는 번호 (솔라피에 인증된 것)
+ *        ALERT_PHONE         시재 부족을 받을 번호  (기본 01041216995)
+ *    ⚠️ 없으면 문자는 안 가고 메일만 갑니다. 오류로 멈추지는 않습니다.
+ *    ⚠️ 저장소가 Public 이라 코드에 절대 적지 마십시오.
+ *
  * ⚠️ 2026-09-08 — 원당본점이 붙었습니다. 배포는 하나만 씁니다.
  *
  *    화면이 branch 값을 보내면 그 지점 시트에 기록합니다.
@@ -452,6 +469,22 @@ function saveCash(data) {
     ]);
 
     if (부족 > 0) {
+      // ── 📱 문자로 먼저 (2026-09-29) ──
+      //    사장님: 「시재부족알림 안 옴. 크롤링 알림처럼 앱도 알림해서 보내게끔」
+      //    ⚠️ 메일은 안 보게 됩니다. 문자가 먼저입니다.
+      //    ⚠️ 문자가 막혀도 아래 메일은 그대로 갑니다. 돈 이야기라 이중으로 겁니다.
+      try {
+        const 사람2 = 폰이름_(String(data.device || ''));
+        const 제목 = '💰 ' + 지점 + ' 시재 부족';
+        const 본문 = date + ' 마감\n\n' +
+                     '부족액 ' + 부족.toLocaleString() + '원\n\n' +
+                     '채워 넣어주세요.' +
+                     (사람2 ? '\n(' + 사람2 + ')' : '');
+        시재문자_(제목, 본문);
+      } catch (err) {
+        console.log('시재 문자 실패: ' + err.message);
+      }
+
       try {
         const 사람 = 폰이름_(String(data.device || ''));
         MailApp.sendEmail({
@@ -583,4 +616,92 @@ function toggleMonthly(monthStr, itemId, checked, branch) {
     }
     return getMonthlyState(m);
   });
+}
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  📱 시재 부족 문자   2026-09-29
+//
+//  사장님 말: 「시재부족알림 안 옴. 크롤링 알림처럼 앱도 알림해서 보내게끔 못 해주나?」
+//
+//  ⚠️ 처음에는 발주 GAS 로 보내게 만들었습니다. 열쇠가 거기 있어서였습니다.
+//     사장님 지적이 맞았습니다 — 「기능도 마감체크리스트에 있는데 왜 발주에 넣어?」
+//     마감 기능은 마감 GAS 안에서 끝나야 합니다. 여기로 옮겼습니다.
+//
+//  ⚠️ 열쇠가 두 곳(발주·마감)에 생기지만 괜찮습니다.
+//     「같은 값을 두 곳에」가 위험한 건 품목 이름·시각처럼 자주 바뀌는 값입니다.
+//     솔라피 열쇠는 몇 년에 한 번 바뀔까 말까이고, 스크립트 속성이라 코드와 무관합니다.
+//
+//  ⚠️ 열쇠가 없으면 조용히 건너뜁니다. 오류로 마감을 막으면 안 됩니다.
+//     그때는 메일만 갑니다 (saveCash 가 이어서 보냅니다).
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function 시재문자_(제목, 본문) {
+  const p      = PropertiesService.getScriptProperties();
+  const key    = (p.getProperty('SOLAPI_API_KEY')    || '').trim();
+  const secret = (p.getProperty('SOLAPI_API_SECRET') || '').trim();
+  const from   = (p.getProperty('SOLAPI_SENDER')     || '').trim();
+  const to     = (p.getProperty('ALERT_PHONE')       || '01041216995').trim();
+
+  if (!key || !secret || !from) {
+    console.log('⚠️ 솔라피 설정이 없어 문자를 건너뜁니다 (메일은 갑니다). ' +
+                '스크립트 속성에 SOLAPI_API_KEY · SOLAPI_API_SECRET · SOLAPI_SENDER 를 넣으세요.');
+    return { ok: false, message: '설정 없음' };
+  }
+
+  // ⚠️ 제목(subject)을 안 주면 솔라피가 본문 앞부분을 잘라 제목으로 씁니다.
+  //    그러면 같은 글이 두 번 보입니다 (26-09-29 발주 문자에서 겪음).
+  const 바이트 = function (s) {
+    let n = 0;
+    for (let i = 0; i < s.length; i++) {
+      const c = s.charCodeAt(i);
+      n += c <= 0x7F ? 1 : c <= 0x7FF ? 2 : 3;
+    }
+    return n;
+  };
+
+  const type = 바이트(본문) > 90 ? 'LMS' : 'SMS';
+  const msg  = {
+    to   : to.replace(/-/g, ''),
+    from : from.replace(/-/g, ''),
+    text : (type === 'LMS') ? 본문 : ('[' + 제목 + '] ' + 본문),
+    type : type,
+  };
+  if (type === 'LMS') {
+    let s = String(제목);
+    while (바이트(s) > 40) s = s.slice(0, -1);   // 제목은 40바이트까지
+    msg.subject = s;
+  }
+
+  const date = new Date().toISOString();
+  const salt = Utilities.getUuid();
+  const hash = Utilities.computeHmacSha256Signature(
+    Utilities.newBlob(date + salt).getBytes(),
+    Utilities.newBlob(secret).getBytes()
+  );
+  const sig = hash.map(function (b) { return ('0' + (b & 0xff).toString(16)).slice(-2); }).join('');
+
+  const res = UrlFetchApp.fetch('https://api.solapi.com/messages/v4/send', {
+    method             : 'post',
+    contentType        : 'application/json',
+    headers            : { 'Authorization': 'HMAC-SHA256 apiKey=' + key +
+                           ', date=' + date + ', salt=' + salt + ', signature=' + sig },
+    payload            : JSON.stringify({ message: msg }),
+    muteHttpExceptions : true,
+  });
+  const result = JSON.parse(res.getContentText());
+  if (result.errorCode) {
+    console.log('시재 문자 오류: ' + JSON.stringify(result));
+    return { ok: false, message: result.errorCode };
+  }
+  console.log('시재 문자 보냄 → ' + to + ' (' + type + ')');
+  return { ok: true };
+}
+
+
+// ── 🧪 시험용 — 편집기에서 이 함수를 고르고 ▶ 를 누르세요 ──
+//    문자가 오면  →  설정이 맞습니다
+//    안 오면      →  아래 로그에 이유가 찍힙니다
+function 시재문자시험() {
+  const r = 시재문자_('💰 백석 시재 부족', '시험입니다\n\n부족액 12,345원\n\n채워 넣어주세요.');
+  console.log('결과: ' + JSON.stringify(r));
 }
