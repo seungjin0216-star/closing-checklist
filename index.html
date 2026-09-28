@@ -1236,12 +1236,16 @@ function 발주빼기_(id, 목록) {
 }
 
 // ⚠️ 마감 GAS 가 아니라 발주 GAS 로 보냅니다. no-cors 라 답장은 안 읽습니다.
-function 발주POST_(type, items) {
+//    ⚠️ 2026-09-29 — 세 번째 인자로 덧붙일 것을 받습니다 (시재 부족 알림이 씁니다)
+function 발주POST_(type, items, 더) {
   try {
+    const 몸 = { type: type, device: 폰번호 };
+    if (items) 몸.items = items;
+    if (더) Object.keys(더).forEach(function (k) { 몸[k] = 더[k]; });
     fetch(발주_GAS, {
       method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ type: type, device: 폰번호, items: items }),
+      body: JSON.stringify(몸),
     }).catch(function () {});
   } catch (e) {}
 }
@@ -1735,8 +1739,19 @@ function 시재보내기_() {
   마감완료진행_();
 }
 
-// ⚠️ 부족할 때만 메일이 갑니다. 맞으면 시트에 기록만 남습니다.
-//    매일 「맞음」 메일이 오면 사흘 만에 안 읽게 됩니다.
+// ⚠️ 부족할 때만 알립니다. 맞으면 시트에 기록만 남습니다.
+//    매일 「맞음」이 오면 사흘 만에 안 읽게 됩니다.
+//
+//  🔴 2026-09-29 — 문자로도 보냅니다
+//    사장님 말: 「시재부족알림 안 옴. 크롤링 알림처럼 앱도 알림해서 보내게끔 못 해주나?」
+//    그전에는 마감 GAS 가 **메일만** 보냈습니다. 메일은 안 보게 됩니다.
+//
+//  ⚠️ 문자는 **발주 GAS** 가 보냅니다. 솔라피 열쇠가 거기에만 있기 때문입니다.
+//     열쇠를 두 곳에 두면 한쪽만 바꾸게 되고, 그게 이 프로젝트에서 계속 사고를 냈습니다.
+//     🛒 가 쓰는 길을 그대로 씁니다.
+//
+//  ⚠️ 부족액(숫자)만 보냅니다. 문장은 서버가 만듭니다.
+//     그 주소는 열려 있으므로 임의 문자를 보낼 수 있게 두면 안 됩니다.
 function 시재보고_(부족액) {
   postAction({
     action : 'cash',
@@ -1744,6 +1759,8 @@ function 시재보고_(부족액) {
     short  : 부족액,
     device : 폰번호,
   });
+
+  if (부족액 > 0) 발주POST_('cash_alert', null, { short: 부족액, branch: BRANCH });
 }
 
 // 시재를 마치면 곧바로 완료합니다.
@@ -2011,7 +2028,7 @@ document.addEventListener('visibilitychange', function () {
   <span><span class="rb-text">최신화</span><br><span class="rb-ver" id="rb-ver">v…</span></span>
 </div>
 <script>
-const APP_VERSION = '2026-09-28c';
+const APP_VERSION = '2026-09-29a';
 
 // ⚠️ 2026-09-22 — 버전 글자를 여기서 화면에 써넣습니다.
 //    그전에는 화면(HTML)과 코드(APP_VERSION) 두 군데에 따로 적혀 있었습니다.
