@@ -116,6 +116,8 @@ function doPost(e) {
     result = recordOpenCompletion(data.date, data.carried, data.branch);
   } else if (data.action === 'carryover') {
     result = saveCarryover(data.fromDate, data.targetDate, data.items, data.branch);
+  } else if (data.action === 'carrySet') {
+    result = setCarry(data);   // 26-10-09 「내일로」를 누르는 그 순간 한 줄씩
   } else if (data.action === 'toggleMonthly') {
     result = toggleMonthly(data.month, data.itemId, data.checked, data.branch);
   } else if (data.action === 'checks') {
@@ -551,11 +553,34 @@ function saveCarryover(fromDate, targetDate, items, branch) {
     if (!items || !items.length) return { ok: true, saved: 0 };
     const sh = getCarrySheet_(branch);
     const now = Utilities.formatDate(new Date(), TIMEZONE, 'HH:mm');
+    // ⚠️ 26-10-09 이름 「글자」만 와도 받습니다
+    //    옛 마감체크리스트(index.html)는 {id:이름} 이 아니라 '다진마늘' 글자만 보냅니다
+    //    전에는 it.id · it.label 이 없어 빈칸으로 저장됐습니다 (10/5 · 10/8 마감 — 이름 잃음)
     const rows = items.map(function (it) {
-      return [fromDate || todayStr_(), targetDate || '', it.id || '', it.label || '', it.group || '', now];
+      if (typeof it === 'string') return [fromDate || todayStr_(), targetDate || '', '', it, '', now];
+      return [fromDate || todayStr_(), targetDate || '', it.id || '', it.label || it.id || '', it.group || '', now];
     });
     sh.getRange(sh.getLastRow() + 1, 1, rows.length, 6).setValues(rows);
     return { ok: true, saved: rows.length };
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  「내일로」를 누르는 순간 한 줄 (26-10-09)
+//
+//  사장님: 「마감체크리스트는 마감 때 딱 하는 게 아니라 영업 중에도 함 … 한 명만 끝까지 시재까지 완료하고
+//          나머지는 그걸 체크하고 중간에 끄기도 함. 따라서 중간에 내일로 미룸을 체크하고 꺼버리면 이게 가지 않는 경우가 있는 것 같음」
+//  → 맞았습니다. 전에는 시재까지 끝낸 **그 폰의** 「내일로」만, 완료를 누를 때 한꺼번에 보냈습니다.
+//    다른 폰에서 누른 「내일로」는 그 폰 안에만 있다가 사라졌습니다.
+//  이제 누르는 순간 서버에 한 줄. 끄면 「끔」 한 줄 (지우지 않음 · 절대 규칙 ④). G칸 = 켬/끔
+// ══════════════════════════════════════════════════════════
+function setCarry(data) {
+  return withLock_(function () {
+    const sh = getCarrySheet_(data.branch);
+    const now = Utilities.formatDate(new Date(), TIMEZONE, 'HH:mm');
+    sh.appendRow([data.fromDate || todayStr_(), data.targetDate || '', data.id || '', data.label || data.id || '',
+                  data.group || '', now, data.on === false ? '끔' : '켬', String(data.device || '')]);
+    return { ok: true };
   });
 }
 
@@ -563,13 +588,22 @@ function getCarryover(dateStr, branch) {
   const date = dateStr || todayStr_();
   const sh = getCarrySheet_(branch);
   const values = sh.getDataRange().getValues();
-  const items = [];
+  // ⚠️ 26-10-09 같은 항목이 여러 줄일 수 있습니다 (누를 때 한 줄 + 완료 때 한 번 더 · 두 폰)
+  //    항목마다 **마지막 줄**이 이깁니다. 「끔」이면 뺍니다. G칸이 빈 옛 줄은 켬입니다
+  const 마지막 = {}, 순서 = [];
   for (let i = 1; i < values.length; i++) {
     const row = values[i];
-    if (rowDate_(row[1]) === date) {
-      items.push({ id: row[2], label: row[3], group: row[4] });
-    }
+    if (rowDate_(row[1]) !== date) continue;
+    const 키 = String(row[3] || row[2] || '');
+    if (!키) { 순서.push({ id: row[2], label: row[3], group: row[4] }); continue; }   // 이름 없는 옛 줄 — 그대로 보여줌
+    if (!(키 in 마지막)) 순서.push(키);
+    마지막[키] = { id: row[2], label: row[3], group: row[4], off: String(row[6] || '') === '끔' };
   }
+  const items = [];
+  순서.forEach(function (k) {
+    if (typeof k !== 'string') { items.push(k); return; }
+    const v = 마지막[k]; if (!v.off) items.push({ id: v.id, label: v.label, group: v.group });
+  });
   return { ok: true, date: date, items: items };
 }
 

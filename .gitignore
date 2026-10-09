@@ -28,3 +28,8 @@ Thumbs.db
 *.log
 logs/
 *.tmp
+
+# ── clasp (26-10-09 · 고기주문_백석 과 같은 방식) ──
+.clasp.json
+_gas/
+_gas_백업_*/

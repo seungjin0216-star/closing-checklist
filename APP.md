@@ -319,6 +319,34 @@ phones.html  사장님이 기종·첫접속·주 사용시간대를 보고 이�
 
 ## 6. 🔧 문제 로그
 
+### 🔴 넘어온 것 이름이 빈칸 (26-10-05 · 10-08 마감 · 26-10-09 고침)
+
+| 증상 | 원인 | 이걸로 가려낸다 | 해결 | 언제 |
+|---|---|---|---|---|
+| 오픈 「넘어온 것」이 이름 없이 「어제 못 한 것」만 | saveCarryover 가 `{id,label}` 만 읽음. **옛 마감체크리스트(index.html)는 이름 글자만** 보내고, 직원앱도 v12 까지 글자만 보냄 | `?action=carryover&date=…` 에 label "" · 2099-12-31 에 꼴 맞춰 보내면 정상 저장 | 서버가 글자도 받음 (`typeof it === 'string'`) · 직원앱 v13 부터 꼴 맞춤 | 26-10-09 |
+
+⚠️ 사장님 「아직도 마감넘어온거 이름이 안넘어옴」 — 10/6 에 앱만 고치고 옛 앱으로 마감하는 경우를 못 봤습니다
+⚠️ 옛 앱은 건드리지 않습니다 (CLAUDE.md) → 서버에서 받아 줍니다
+
+### 🔗 clasp 연결 (26-10-09) — 이제 Claude 가 직접 올림
+```
+scriptId    1HbUhlEPVUDPdSE1bDxnWVswomvd7EVspwrBvZCu6GK8qwPlyDzSL6mhe   (사장님이 편집기 주소로 주심)
+편집기       https://script.google.com/home/projects/1HbUhlEPVUDPdSE1bDxnWVswomvd7EVspwrBvZCu6GK8qwPlyDzSL6mhe/edit
+배포         AKfycbxeauYy… @17 (26-10-09)   ← 「새 버전」= clasp update-deployment
+폴더         마감체크리스트/.clasp.json → rootDir _gas  (.gitignore) · 정본은 Code.gs
+⚠️ GAS 안에 Index.html(옛 웹 화면)도 있음 — pull 한 그대로 같이 올라감. 건드리지 않음
+⚠️ clasp list 에 안 나옴 (시트에 붙은 스크립트). 그래서 10/9 까지 아무 데도 안 적혀 있었음
+⚠️ 순서는 발주와 같음 — pull·비교 → 사장님 「응」 → 백업 _gas_백업_* → push → 배포 번호 알림
+```
+
+### 26-10-09 「내일로」를 누를 때마다 한 줄 (carrySet)
+```
+POST {action:'carrySet', fromDate, targetDate, id, label, group, on, device}
+  → Carryover 시트에 한 줄 + G칸 켬/끔 · H칸 폰  (지우지 않음)
+getCarryover  항목(이름)마다 마지막 줄이 이김 · 「끔」이면 뺌 · G칸 빈 옛 줄은 켬 · 이름 없는 옛 줄은 그대로
+⚠️ 완료 때 한꺼번에 보내는 carryover 도 그대로 둠 — 같은 이름이면 하나로 합쳐 보여줌
+```
+
 ### 증상 A — 앱이 옛 화면을 보여준다
 
 | # | 원인 | 이걸로 가려낸다 | 해결 | 언제 |
