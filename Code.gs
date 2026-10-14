@@ -116,6 +116,8 @@ function doPost(e) {
     result = recordOpenCompletion(data.date, data.carried, data.branch);
   } else if (data.action === 'carryover') {
     result = saveCarryover(data.fromDate, data.targetDate, data.items, data.branch);
+  } else if (data.action === 'settle') {
+    result = saveSettle(data);   // 26-10-14 마감정산 — 현금 매출 · 계좌이체 · 시재 부족
   } else if (data.action === 'carrySet') {
     result = setCarry(data);   // 26-10-09 「내일로」를 누르는 그 순간 한 줄씩
   } else if (data.action === 'toggleMonthly') {
@@ -580,6 +582,25 @@ function setCarry(data) {
     const now = Utilities.formatDate(new Date(), TIMEZONE, 'HH:mm');
     sh.appendRow([data.fromDate || todayStr_(), data.targetDate || '', data.id || '', data.label || data.id || '',
                   data.group || '', now, data.on === false ? '끔' : '켬', String(data.device || '')]);
+    return { ok: true };
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  💰 마감정산 (26-10-14)
+//  사장님: 「마감하고 나서 우리가 정산을 해야 해. 현금 매출이 얼마 나왔고, 계좌이체는 얼마 했으며,
+//          현재 시재가 맞는지 안 맞는지 확인하게끔」
+//  시트 「마감정산」 한 줄: 영업일 · 현금매출 · 계좌이체 · 시재부족(0=맞음 · 빈칸=나중에) · 기록시각 · 폰
+//  ⚠️ 같은 날 여러 줄이면 마지막 줄이 맞는 것 (완료 취소 후 다시 하면 한 줄 더) — 지우지 않음
+// ══════════════════════════════════════════════════════════
+function saveSettle(data) {
+  return withLock_(function () {
+    const ss = getSs_(), name = sheetName_('마감정산', data.branch);
+    let sh = ss.getSheetByName(name);
+    if (!sh) { sh = ss.insertSheet(name); sh.appendRow(['영업일', '현금매출', '계좌이체', '시재부족', '기록시각', '폰']); sh.setFrozenRows(1); }
+    sh.appendRow([data.date || todayStr_(), Number(data.cashSales) || 0, Number(data.transfer) || 0,
+                  data.short === '' || data.short == null ? '' : Number(data.short) || 0,
+                  Utilities.formatDate(new Date(), TIMEZONE, 'HH:mm'), String(data.device || '')]);
     return { ok: true };
   });
 }

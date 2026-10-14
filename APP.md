@@ -339,6 +339,13 @@ scriptId    1HbUhlEPVUDPdSE1bDxnWVswomvd7EVspwrBvZCu6GK8qwPlyDzSL6mhe   (사장�
 ⚠️ 순서는 발주와 같음 — pull·비교 → 사장님 「응」 → 백업 _gas_백업_* → push → 배포 번호 알림
 ```
 
+### 💰 마감정산 (26-10-14 · @18)
+```
+POST {action:'settle', date, cashSales, transfer, short, device}  → 「마감정산」 탭 (없으면 만듦)
+  영업일 · 현금매출 · 계좌이체 · 시재부족(0=맞음 · 빈칸=나중에) · 기록시각 · 폰   — 같은 날 여러 줄이면 마지막이 맞음
+⚠️ 손익 GAS 는 이 탭을 읽지 않습니다 (아직). 사장앱에 띄울지는 확인 필요
+```
+
 ### 26-10-09 「내일로」를 누를 때마다 한 줄 (carrySet)
 ```
 POST {action:'carrySet', fromDate, targetDate, id, label, group, on, device}
