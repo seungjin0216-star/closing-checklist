@@ -14,7 +14,7 @@
  *        SOLAPI_API_KEY      솔라피 API Key
  *        SOLAPI_API_SECRET   솔라피 API Secret
  *        SOLAPI_SENDER       보내는 번호 (솔라피에 인증된 것)
- *        ALERT_PHONE         시재 부족을 받을 번호  (기본 01041216995)
+ *        ALERT_PHONE         시재 부족을 받을 번호  (26-10-15 부터 속성에만)
  *    ⚠️ 없으면 문자는 안 가고 메일만 갑니다. 오류로 멈추지는 않습니다.
  *    ⚠️ 저장소가 Public 이라 코드에 절대 적지 마십시오.
  *
@@ -85,6 +85,10 @@ function doGet(e) {
     result = getChecks(params.date, params.mode, params.branch);
   } else if (action === 'devices') {
     result = getDevices();
+  } else if (action === 'alertok') {   // 📞 26-10-15 시재 알림 번호가 속성에 있나 (번호는 안 보임)
+    const pp = PropertiesService.getScriptProperties();
+    if (!pp.getProperty('ALERT_PHONE') && 옛알림번호_) pp.setProperty('ALERT_PHONE', 옛알림번호_);
+    result = { ok: !!pp.getProperty('ALERT_PHONE'), sender: !!pp.getProperty('SOLAPI_SENDER') };
   } else {
     return HtmlService.createHtmlOutput(
       '<meta charset="utf-8"><body style="font-family:sans-serif;padding:40px;text-align:center;">' +
@@ -576,6 +580,8 @@ function saveCarryover(fromDate, targetDate, items, branch) {
 //    다른 폰에서 누른 「내일로」는 그 폰 안에만 있다가 사라졌습니다.
 //  이제 누르는 순간 서버에 한 줄. 끄면 「끔」 한 줄 (지우지 않음 · 절대 규칙 ④). G칸 = 켬/끔
 // ══════════════════════════════════════════════════════════
+const 옛알림번호_ = '';   // 📞 26-10-15 2단계 — 번호는 스크립트 속성 ALERT_PHONE 에만 (1단계 @19 에서 옮김)
+
 function setCarry(data) {
   return withLock_(function () {
     const sh = getCarrySheet_(data.branch);
@@ -695,7 +701,9 @@ function 시재문자_(제목, 본문) {
   const key    = (p.getProperty('SOLAPI_API_KEY')    || '').trim();
   const secret = (p.getProperty('SOLAPI_API_SECRET') || '').trim();
   const from   = (p.getProperty('SOLAPI_SENDER')     || '').trim();
-  const to     = (p.getProperty('ALERT_PHONE')       || '01041216995').trim();
+  // 📞 26-10-15 번호를 코드에서 뺌 — 속성이 비어 있으면 한 번만 옛 번호로 채우고(1단계), 다음 판에서 옛 번호도 뺌
+  if (!p.getProperty('ALERT_PHONE') && 옛알림번호_) p.setProperty('ALERT_PHONE', 옛알림번호_);
+  const to     = (p.getProperty('ALERT_PHONE') || '').trim();
 
   if (!key || !secret || !from) {
     console.log('⚠️ 솔라피 설정이 없어 문자를 건너뜁니다 (메일은 갑니다). ' +
