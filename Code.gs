@@ -85,6 +85,15 @@ function doGet(e) {
     result = getChecks(params.date, params.mode, params.branch);
   } else if (action === 'devices') {
     result = getDevices();
+  } else if (action === 'settlecopy') {   // 💰 26-10-16 한 번만 — 이미 쌓인 마감정산을 손익 「현금확인」 탭으로 (탭이 없을 때만 · 금액은 답에 안 보임)
+    const 손 = SpreadsheetApp.openById(손익시트_.baekseok);
+    if (손.getSheetByName('현금확인')) { result = { ok: false, why: '이미 있음' }; }
+    else {
+      const src = getSs_().getSheetByName(sheetName_('마감정산', 'baekseok'));
+      const v = src && src.getLastRow() > 1 ? src.getRange(2, 1, src.getLastRow() - 1, 6).getValues() : [];
+      v.forEach(function (r) { 현금확인적기_(rowDate_(r[0]) || String(r[0]), Number(r[1]) || 0, Number(r[2]) || 0, String(r[5] || '') + ' (옮김)', 'baekseok'); });
+      result = { ok: true, copied: v.length };
+    }
   } else if (action === 'settleok') {   // 💰 26-10-16 마감정산이 쌓이나 — 날짜·줄 수만 (금액은 안 보임 · 주소가 공개라)
     const sh = getSs_().getSheetByName(sheetName_('마감정산', params.branch));
     const last = sh ? sh.getLastRow() : 0;
@@ -612,8 +621,22 @@ function saveSettle(data) {
     sh.appendRow([data.date || todayStr_(), Number(data.cashSales) || 0, Number(data.transfer) || 0,
                   data.short === '' || data.short == null ? '' : Number(data.short) || 0,
                   Utilities.formatDate(new Date(), TIMEZONE, 'HH:mm'), String(data.device || '')]);
+    // 💰 26-10-16 다음 날 아침 「포스 현금매출 vs 실제 현금+이체」 비교용 — 손익 시트(백석)에 「현금확인」 탭 한 줄
+    //    사장님: 「마감정산표 데이터가 분석이 다 끝난 후 … 현금+계좌이체를 비교해서 차액이 있고 없고를 아침 8시에 알림」
+    //    ⚠️ 손익 계산은 건드리지 않음 — 새 탭을 맨 뒤에 붙일 뿐 · 사장앱 서버(서비스 계정)가 이 탭과 「지출및매출로그」를 읽어 비교
+    try { 현금확인적기_(data.date || todayStr_(), Number(data.cashSales) || 0, Number(data.transfer) || 0, String(data.device || ''), data.branch); }
+    catch (e) { console.log('현금확인 탭에 못 적음: ' + e.message); }
     return { ok: true };
   });
+}
+
+const 손익시트_ = { baekseok: '1Vx9e3IkfNaioid2YDmLFeerl8kFgPvMvhrjtrCXTrLE' };   // 백석 손익(지출및매출로그) — 원당은 아직 정산 입력 없음
+function 현금확인적기_(date, cash, xfer, device, branch) {
+  const id = 손익시트_[String(branch || 'baekseok')]; if (!id) return;
+  const ss = SpreadsheetApp.openById(id);
+  let sh = ss.getSheetByName('현금확인');
+  if (!sh) { sh = ss.insertSheet('현금확인', ss.getSheets().length); sh.appendRow(['영업일', '실제현금', '계좌이체', '기록시각', '폰']); sh.setFrozenRows(1); }
+  sh.appendRow([date, cash, xfer, Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm'), device]);
 }
 
 function getCarryover(dateStr, branch) {

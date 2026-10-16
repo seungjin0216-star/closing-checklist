@@ -353,6 +353,13 @@ scriptId    1HbUhlEPVUDPdSE1bDxnWVswomvd7EVspwrBvZCu6GK8qwPlyDzSL6mhe   (사장�
 ⚠️ 순서는 발주와 같음 — pull·비교 → 사장님 「응」 → 백업 _gas_백업_* → push → 배포 번호 알림
 ```
 
+### 💰 현금확인 (26-10-16 · @22)
+```
+saveSettle 이 손익 시트(백석 1Vx9e3…)에 「현금확인」 탭 한 줄도 씀 (영업일 · 실제현금 · 계좌이체 · 기록시각 · 폰) — 탭은 맨 뒤에 새로
+?action=settlecopy 로 그전 정산(10/14 1줄)을 한 번 옮김 · ?action=settleok 날짜만
+⚠️ 손익 계산은 이 탭을 안 읽음 · 사장앱 서버(서비스 계정)만 읽어 아침 비교
+```
+
 ### 💰 마감정산 (26-10-14 · @18)
 ```
 POST {action:'settle', date, cashSales, transfer, short, device}  → 「마감정산」 탭 (없으면 만듦)
