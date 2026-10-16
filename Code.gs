@@ -618,6 +618,14 @@ function saveSettle(data) {
     const ss = getSs_(), name = sheetName_('마감정산', data.branch);
     let sh = ss.getSheetByName(name);
     if (!sh) { sh = ss.insertSheet(name); sh.appendRow(['영업일', '현금매출', '계좌이체', '시재부족', '기록시각', '폰']); sh.setFrozenRows(1); }
+    // v2 (26-10-16 직원앱 v22): 받은 돈 있었나 · 남은 현금 · 계좌이체 있었나(Y/N) · 시재부족 → 「현금매출」 칸 = 남은 현금 · 「계좌이체」 칸 = Y/N
+    if (data.v === 2) {
+      sh.appendRow([data.date || todayStr_(), Number(data.pile) || 0, String(data.xfer || ''),
+                    data.short === '' || data.short == null ? '' : Number(data.short) || 0,
+                    Utilities.formatDate(new Date(), TIMEZONE, 'HH:mm'), String(data.device || '') + ' · 받은돈 ' + (data.money || '')]);
+      try { 현금확인적기2_(data); } catch (e) { console.log('현금확인2 못 적음: ' + e.message); }
+      return { ok: true };
+    }
     sh.appendRow([data.date || todayStr_(), Number(data.cashSales) || 0, Number(data.transfer) || 0,
                   data.short === '' || data.short == null ? '' : Number(data.short) || 0,
                   Utilities.formatDate(new Date(), TIMEZONE, 'HH:mm'), String(data.device || '')]);
@@ -637,6 +645,18 @@ function 현금확인적기_(date, cash, xfer, device, branch) {
   let sh = ss.getSheetByName('현금확인');
   if (!sh) { sh = ss.insertSheet('현금확인', ss.getSheets().length); sh.appendRow(['영업일', '실제현금', '계좌이체', '기록시각', '폰']); sh.setFrozenRows(1); }
   sh.appendRow([date, cash, xfer, Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm'), device]);
+}
+
+// 💰 v2 — 손익 시트 「현금확인2」: 영업일 · 받은돈(Y/N) · 남은현금 · 계좌이체(Y/N) · 시재부족 · 기록시각 · 폰
+//    다음 날 아침 사장앱: 포스 현금매출 − (남은현금 − 시재부족) = 차이
+function 현금확인적기2_(data) {
+  const id = 손익시트_[String(data.branch || 'baekseok')]; if (!id) return;
+  const ss = SpreadsheetApp.openById(id);
+  let sh = ss.getSheetByName('현금확인2');
+  if (!sh) { sh = ss.insertSheet('현금확인2', ss.getSheets().length); sh.appendRow(['영업일', '받은돈', '남은현금', '계좌이체', '시재부족', '기록시각', '폰']); sh.setFrozenRows(1); }
+  sh.appendRow([data.date || todayStr_(), String(data.money || ''), Number(data.pile) || 0, String(data.xfer || ''),
+                data.short === '' || data.short == null ? '' : Number(data.short) || 0,
+                Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm'), String(data.device || '')]);
 }
 
 function getCarryover(dateStr, branch) {
