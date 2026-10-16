@@ -85,6 +85,11 @@ function doGet(e) {
     result = getChecks(params.date, params.mode, params.branch);
   } else if (action === 'devices') {
     result = getDevices();
+  } else if (action === 'settleok') {   // 💰 26-10-16 마감정산이 쌓이나 — 날짜·줄 수만 (금액은 안 보임 · 주소가 공개라)
+    const sh = getSs_().getSheetByName(sheetName_('마감정산', params.branch));
+    const last = sh ? sh.getLastRow() : 0;
+    const dates = last > 1 ? sh.getRange(Math.max(2, last - 9), 1, Math.min(10, last - 1), 1).getValues().map(function (r) { return rowDate_(r[0]) || String(r[0]); }) : [];
+    result = { ok: true, rows: Math.max(0, last - 1), recent: dates };
   } else if (action === 'alertok') {   // 📞 26-10-15 시재 알림 번호가 속성에 있나 (번호는 안 보임)
     const pp = PropertiesService.getScriptProperties();
     if (!pp.getProperty('ALERT_PHONE') && 옛알림번호_) pp.setProperty('ALERT_PHONE', 옛알림번호_);
